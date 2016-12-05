@@ -17,6 +17,8 @@
 # along with secplus.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from __future__ import division
+
 def decode(code):
     rolling = 0
     fixed = 0
@@ -43,9 +45,9 @@ def encode(counter, fixed):
     fixed_base3 = [0] * 20
     for i in range(19, -1, -1):
         counter_base3[i] = counter % 3
-        counter /= 3
+        counter //= 3
         fixed_base3[i] = fixed % 3
-        fixed /= 3
+        fixed //= 3
     code = []
     for i in range(20):
         if i in [0, 10]:
@@ -71,26 +73,26 @@ def pretty(rolling, fixed):
 
 def fixed_pretty(fixed):
     switch_id = fixed % 3
-    id0 = (fixed / 3) % 3
-    id1 = (fixed / 3**2) % 3
+    id0 = (fixed // 3) % 3
+    id1 = (fixed // 3**2) % 3
 
     result = "id1={0} id0={1} switch={2}".format(id1, id0, switch_id)
 
     if id1 == 0:
-        pad_id = (fixed / 3**3) % (3**7)
+        pad_id = (fixed // 3**3) % (3**7)
         result += " pad_id={0}".format(pad_id)
-        pin = (fixed / 3**10) % (3**9)
+        pin = (fixed // 3**10) % (3**9)
         if 0 <= pin <= 9999:
             result += " pin={0:04}".format(pin)
         elif 10000 <= pin <= 11029:
             result += " pin=enter"
-        pin_suffix = (fixed / 3**19) % 3
+        pin_suffix = (fixed // 3**19) % 3
         if pin_suffix == 1:
             result += "#"
         elif pin_suffix == 2:
             result += "*"
     elif id1 == 2:
-        remote_id = (fixed / 3**3)
+        remote_id = (fixed // 3**3)
         result += " remote_id={0}".format(remote_id)
         if switch_id == 1:
             button = "left"
