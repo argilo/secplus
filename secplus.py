@@ -19,6 +19,7 @@
 
 from __future__ import division
 
+
 def decode(code):
     rolling = 0
     fixed = 0
@@ -39,6 +40,7 @@ def decode(code):
     fixed = int("{0:032b}".format(fixed), 2)
     return rolling, fixed
 
+
 def encode(counter, fixed):
     counter = int("{0:032b}".format(counter & 0xfffffffe)[::-1], 2)
     counter_base3 = [0] * 20
@@ -58,8 +60,9 @@ def encode(counter, fixed):
         code.append(acc % 3)
     return code
 
+
 def ook(counter, fixed, fast=True):
-    OOK = { -1: [0,0,0,0], 0: [0,0,0,1], 1: [0,0,1,1], 2: [0,1,1,1] }
+    OOK = {-1: [0, 0, 0, 0], 0: [0, 0, 0, 1], 1: [0, 0, 1, 1], 2: [0, 1, 1, 1]}
     code = encode(counter, fixed)
     blank = [-1] * (10 if fast else 29)
     code = [0] + code[0:20] + blank + [2] + code[20:40] + blank
@@ -68,8 +71,11 @@ def ook(counter, fixed, fast=True):
         ook_bits += OOK[symbol]
     return ook_bits
 
+
 def pretty(rolling, fixed):
-    return "rolling={0}  fixed={1}  ({2})".format(rolling, fixed, fixed_pretty(fixed))
+    return "rolling={0}  fixed={1}  ({2})".format(rolling, fixed,
+                                                  fixed_pretty(fixed))
+
 
 def fixed_pretty(fixed):
     switch_id = fixed % 3
