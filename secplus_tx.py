@@ -3,7 +3,7 @@
 ##################################################
 # GNU Radio Python Flow Graph
 # Title: Secplus Tx
-# Generated: Mon Dec  5 20:36:59 2016
+# Generated: Mon Dec  5 20:40:54 2016
 ##################################################
 
 from gnuradio import analog
@@ -29,7 +29,7 @@ class secplus_tx(gr.top_block):
         ##################################################
         self.rolling = rolling = 1234567890
         self.fixed = fixed = 1234567890
-        self.seq = seq = [0]*100 + secplus.ook(rolling, fixed)*4 + [0]*100
+        self.seq = seq = [0]*100 + secplus.ook(rolling, fixed, fast=False)*4 + [0]*100
         self.samp_rate = samp_rate = 2e6
         self.freq = freq = 315.15e6
 
@@ -66,14 +66,14 @@ class secplus_tx(gr.top_block):
 
     def set_rolling(self, rolling):
         self.rolling = rolling
-        self.set_seq([0]*100 + secplus.ook(self.rolling, self.fixed)*4 + [0]*100)
+        self.set_seq([0]*100 + secplus.ook(self.rolling, self.fixed, fast=False)*4 + [0]*100)
 
     def get_fixed(self):
         return self.fixed
 
     def set_fixed(self, fixed):
         self.fixed = fixed
-        self.set_seq([0]*100 + secplus.ook(self.rolling, self.fixed)*4 + [0]*100)
+        self.set_seq([0]*100 + secplus.ook(self.rolling, self.fixed, fast=False)*4 + [0]*100)
 
     def get_seq(self):
         return self.seq

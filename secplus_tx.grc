@@ -213,7 +213,7 @@
     </param>
     <param>
       <key>value</key>
-      <value>[0]*100 + secplus.ook(rolling, fixed)*4 + [0]*100</value>
+      <value>[0]*100 + secplus.ook(rolling, fixed, fast=False)*4 + [0]*100</value>
     </param>
   </block>
   <block>
