@@ -44,10 +44,10 @@ class blk(gr.sync_block):
     def work(self, input_items, output_items):
         for n, sample in enumerate(input_items[0]):
             current_sample = self.nitems_read(0) + n
-            if self.last_sample < self.threshold and sample >= self.threshold:
+            if self.last_sample < self.threshold <= sample:
                 # rising edge
                 self.last_rise = current_sample
-            elif self.last_sample >= self.threshold and sample < self.threshold:
+            elif self.last_sample >= self.threshold > sample:
                 # falling edge
                 on_samples = current_sample - self.last_rise
                 self.process_symbol(on_samples)
@@ -82,4 +82,3 @@ class blk(gr.sync_block):
             rolling, fixed = secplus.decode(self.pair)
             print secplus.pretty(rolling, fixed)
             self.last_pair = self.pair
-
