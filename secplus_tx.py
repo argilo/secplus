@@ -3,7 +3,7 @@
 ##################################################
 # GNU Radio Python Flow Graph
 # Title: Secplus Tx
-# Generated: Mon Dec  5 20:40:54 2016
+# Generated: Fri Dec  9 06:39:45 2016
 ##################################################
 
 from gnuradio import analog
@@ -46,7 +46,7 @@ class secplus_tx(gr.top_block):
         self.osmosdr_sink_0.set_bb_gain(0, 0)
         self.osmosdr_sink_0.set_antenna('', 0)
         self.osmosdr_sink_0.set_bandwidth(0, 0)
-          
+
         self.blocks_vector_source_x_0 = blocks.vector_source_c(seq, False, 1, [])
         self.blocks_repeat_0 = blocks.repeat(gr.sizeof_gr_complex*1, 1000)
         self.blocks_multiply_xx_0 = blocks.multiply_vcc(1)
@@ -55,11 +55,11 @@ class secplus_tx(gr.top_block):
         ##################################################
         # Connections
         ##################################################
-        self.connect((self.analog_sig_source_x_0, 0), (self.blocks_multiply_xx_0, 0))    
-        self.connect((self.blocks_multiply_xx_0, 0), (self.osmosdr_sink_0, 0))    
-        self.connect((self.blocks_repeat_0, 0), (self.single_pole_iir_filter_xx_0, 0))    
-        self.connect((self.blocks_vector_source_x_0, 0), (self.blocks_repeat_0, 0))    
-        self.connect((self.single_pole_iir_filter_xx_0, 0), (self.blocks_multiply_xx_0, 1))    
+        self.connect((self.analog_sig_source_x_0, 0), (self.blocks_multiply_xx_0, 0))
+        self.connect((self.blocks_multiply_xx_0, 0), (self.osmosdr_sink_0, 0))
+        self.connect((self.blocks_repeat_0, 0), (self.single_pole_iir_filter_xx_0, 0))
+        self.connect((self.blocks_vector_source_x_0, 0), (self.blocks_repeat_0, 0))
+        self.connect((self.single_pole_iir_filter_xx_0, 0), (self.blocks_multiply_xx_0, 1))
 
     def get_rolling(self):
         return self.rolling

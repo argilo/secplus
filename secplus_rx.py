@@ -3,7 +3,7 @@
 ##################################################
 # GNU Radio Python Flow Graph
 # Title: Secplus Rx
-# Generated: Mon Dec  5 20:12:02 2016
+# Generated: Fri Dec  9 06:39:42 2016
 ##################################################
 
 if __name__ == '__main__':
@@ -93,19 +93,19 @@ class secplus_rx(gr.top_block, Qt.QWidget):
         )
         self.qtgui_time_sink_x_0.set_update_time(0.10)
         self.qtgui_time_sink_x_0.set_y_axis(0, 2)
-        
+
         self.qtgui_time_sink_x_0.set_y_label('Amplitude', "")
-        
+
         self.qtgui_time_sink_x_0.enable_tags(-1, True)
         self.qtgui_time_sink_x_0.set_trigger_mode(qtgui.TRIG_MODE_AUTO, qtgui.TRIG_SLOPE_POS, threshold, 0, 0, "")
         self.qtgui_time_sink_x_0.enable_autoscale(False)
         self.qtgui_time_sink_x_0.enable_grid(False)
         self.qtgui_time_sink_x_0.enable_axis_labels(True)
         self.qtgui_time_sink_x_0.enable_control_panel(False)
-        
+
         if not True:
           self.qtgui_time_sink_x_0.disable_legend()
-        
+
         labels = ['', '', '', '', '',
                   '', '', '', '', '']
         widths = [1, 1, 1, 1, 1,
@@ -118,7 +118,7 @@ class secplus_rx(gr.top_block, Qt.QWidget):
                    -1, -1, -1, -1, -1]
         alphas = [1.0, 1.0, 1.0, 1.0, 1.0,
                   1.0, 1.0, 1.0, 1.0, 1.0]
-        
+
         for i in xrange(1):
             if len(labels[i]) == 0:
                 self.qtgui_time_sink_x_0.set_line_label(i, "Data {0}".format(i))
@@ -129,7 +129,7 @@ class secplus_rx(gr.top_block, Qt.QWidget):
             self.qtgui_time_sink_x_0.set_line_style(i, styles[i])
             self.qtgui_time_sink_x_0.set_line_marker(i, markers[i])
             self.qtgui_time_sink_x_0.set_line_alpha(i, alphas[i])
-        
+
         self._qtgui_time_sink_x_0_win = sip.wrapinstance(self.qtgui_time_sink_x_0.pyqwidget(), Qt.QWidget)
         self.top_layout.addWidget(self._qtgui_time_sink_x_0_win)
         self.osmosdr_source_0 = osmosdr.source( args="numchan=" + str(1) + " " + '' )
@@ -144,19 +144,19 @@ class secplus_rx(gr.top_block, Qt.QWidget):
         self.osmosdr_source_0.set_bb_gain(32, 0)
         self.osmosdr_source_0.set_antenna('', 0)
         self.osmosdr_source_0.set_bandwidth(1e6, 0)
-          
+
         self.blocks_rotator_cc_0 = blocks.rotator_cc(2 * math.pi * -300e3 / samp_rate)
         self.blocks_complex_to_mag_0 = blocks.complex_to_mag(1)
 
         ##################################################
         # Connections
         ##################################################
-        self.connect((self.blocks_complex_to_mag_0, 0), (self.rational_resampler_xxx_1, 0))    
-        self.connect((self.blocks_rotator_cc_0, 0), (self.rational_resampler_xxx_0, 0))    
-        self.connect((self.osmosdr_source_0, 0), (self.blocks_rotator_cc_0, 0))    
-        self.connect((self.rational_resampler_xxx_0, 0), (self.blocks_complex_to_mag_0, 0))    
-        self.connect((self.rational_resampler_xxx_1, 0), (self.qtgui_time_sink_x_0, 0))    
-        self.connect((self.rational_resampler_xxx_1, 0), (self.secplus_decode, 0))    
+        self.connect((self.blocks_complex_to_mag_0, 0), (self.rational_resampler_xxx_1, 0))
+        self.connect((self.blocks_rotator_cc_0, 0), (self.rational_resampler_xxx_0, 0))
+        self.connect((self.osmosdr_source_0, 0), (self.blocks_rotator_cc_0, 0))
+        self.connect((self.rational_resampler_xxx_0, 0), (self.blocks_complex_to_mag_0, 0))
+        self.connect((self.rational_resampler_xxx_1, 0), (self.qtgui_time_sink_x_0, 0))
+        self.connect((self.rational_resampler_xxx_1, 0), (self.secplus_decode, 0))
 
     def closeEvent(self, event):
         self.settings = Qt.QSettings("GNU Radio", "secplus_rx")

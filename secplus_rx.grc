@@ -236,7 +236,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(784, 216)</value>
+      <value>(784, 160)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -279,7 +279,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(368, 212)</value>
+      <value>(368, 156)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -1637,7 +1637,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(136, 148)</value>
+      <value>(136, 92)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -1776,7 +1776,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(520, 308)</value>
+      <value>(520, 252)</value>
     </param>
     <param>
       <key>gui_hint</key>
@@ -2131,7 +2131,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(592, 192)</value>
+      <value>(592, 136)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -2190,7 +2190,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(728, 304)</value>
+      <value>(728, 248)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -2329,7 +2329,7 @@ class blk(gr.sync_block):
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(520, 396)</value>
+      <value>(520, 340)</value>
     </param>
     <param>
       <key>_rotation</key>
