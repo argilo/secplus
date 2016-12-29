@@ -97,7 +97,7 @@ def fixed_pretty(fixed):
             result += "#"
         elif pin_suffix == 2:
             result += "*"
-    elif id1 == 2:
+    else:
         remote_id = (fixed // 3**3)
         result += " remote_id={0}".format(remote_id)
         if switch_id == 1:
