@@ -43,7 +43,7 @@ This Python module encodes and decodes the rolling and fixed codes, and provides
 secplus_rx.grc, secplus_rx.py
 -----------------------------
 
-This GNU Radio flow graph receives Security+ transmissions on 315.15 MHz and pretty-prints them. It has been tested on an RTL-SDR and a HackRF.
+This GNU Radio flow graph receives Security+ transmissions on 315.15 or 390.15 MHz and pretty-prints them. It has been tested on an RTL-SDR and a HackRF.
 
 secplus_tx.grc, secplus_tx.py
 -----------------------------
