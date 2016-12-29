@@ -3,7 +3,7 @@
 ##################################################
 # GNU Radio Python Flow Graph
 # Title: Secplus Rx
-# Generated: Thu Dec 29 11:57:05 2016
+# Generated: Thu Dec 29 11:58:46 2016
 ##################################################
 
 if __name__ == '__main__':
@@ -67,8 +67,8 @@ class secplus_rx(gr.top_block, Qt.QWidget):
         self.threshold = threshold = 0.05
         self.samp_rate = samp_rate = 2000000
         self.freq = freq = 315150000
-        self.decim2 = decim2 = 50
-        self.decim1 = decim1 = 4
+        self.decim2 = decim2 = 100
+        self.decim1 = decim1 = 2
 
         ##################################################
         # Blocks
