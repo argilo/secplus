@@ -3,7 +3,7 @@
 ##################################################
 # GNU Radio Python Flow Graph
 # Title: Secplus Rx
-# Generated: Fri Dec  9 06:39:42 2016
+# Generated: Thu Dec 29 11:57:05 2016
 ##################################################
 
 if __name__ == '__main__':
@@ -17,6 +17,7 @@ if __name__ == '__main__':
             print "Warning: failed to XInitThreads()"
 
 from PyQt4 import Qt
+from PyQt4.QtCore import QObject, pyqtSlot
 from gnuradio import blocks
 from gnuradio import eng_notation
 from gnuradio import filter
@@ -65,13 +66,34 @@ class secplus_rx(gr.top_block, Qt.QWidget):
         ##################################################
         self.threshold = threshold = 0.05
         self.samp_rate = samp_rate = 2000000
-        self.freq = freq = 315.15e6
+        self.freq = freq = 315150000
         self.decim2 = decim2 = 50
         self.decim1 = decim1 = 4
 
         ##################################################
         # Blocks
         ##################################################
+        self._freq_options = (315150000, 390150000, )
+        self._freq_labels = ('315 MHz', '390 MHz', )
+        self._freq_group_box = Qt.QGroupBox('Frequency')
+        self._freq_box = Qt.QHBoxLayout()
+        class variable_chooser_button_group(Qt.QButtonGroup):
+            def __init__(self, parent=None):
+                Qt.QButtonGroup.__init__(self, parent)
+            @pyqtSlot(int)
+            def updateButtonChecked(self, button_id):
+                self.button(button_id).setChecked(True)
+        self._freq_button_group = variable_chooser_button_group()
+        self._freq_group_box.setLayout(self._freq_box)
+        for i, label in enumerate(self._freq_labels):
+        	radio_button = Qt.QRadioButton(label)
+        	self._freq_box.addWidget(radio_button)
+        	self._freq_button_group.addButton(radio_button, i)
+        self._freq_callback = lambda i: Qt.QMetaObject.invokeMethod(self._freq_button_group, "updateButtonChecked", Qt.Q_ARG("int", self._freq_options.index(i)))
+        self._freq_callback(self.freq)
+        self._freq_button_group.buttonClicked[int].connect(
+        	lambda i: self.set_freq(self._freq_options[i]))
+        self.top_layout.addWidget(self._freq_group_box)
         self.secplus_decode = secplus_decode.blk(samp_rate=samp_rate / decim1 / decim2, threshold=threshold)
         self.rational_resampler_xxx_1 = filter.rational_resampler_fff(
                 interpolation=1,
@@ -186,6 +208,7 @@ class secplus_rx(gr.top_block, Qt.QWidget):
 
     def set_freq(self, freq):
         self.freq = freq
+        self._freq_callback(self.freq)
         self.osmosdr_source_0.set_center_freq(self.freq - 300e3, 0)
 
     def get_decim2(self):
