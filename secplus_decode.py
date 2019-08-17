@@ -17,6 +17,7 @@
 # along with secplus.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from __future__ import print_function
 import numpy as np
 from gnuradio import gr
 import secplus
@@ -80,5 +81,5 @@ class blk(gr.sync_block):
 
         if len(self.pair) == 40 and self.pair != self.last_pair:
             rolling, fixed = secplus.decode(self.pair)
-            print secplus.pretty(rolling, fixed)
+            print(secplus.pretty(rolling, fixed))
             self.last_pair = self.pair

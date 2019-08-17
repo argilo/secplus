@@ -1,23 +1,26 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-##################################################
+
+#
+# SPDX-License-Identifier: GPL-3.0
+#
 # GNU Radio Python Flow Graph
 # Title: Secplus Tx
-# Generated: Fri Dec  9 06:39:45 2016
-##################################################
+# GNU Radio version: 3.8.0.0
 
 from gnuradio import analog
 from gnuradio import blocks
-from gnuradio import eng_notation
 from gnuradio import filter
 from gnuradio import gr
-from gnuradio.eng_option import eng_option
 from gnuradio.filter import firdes
-from optparse import OptionParser
+import sys
+import signal
+from argparse import ArgumentParser
+from gnuradio.eng_arg import eng_float, intx
+from gnuradio import eng_notation
 import osmosdr
-import secplus
 import time
-
+import secplus
 
 class secplus_tx(gr.top_block):
 
@@ -37,7 +40,10 @@ class secplus_tx(gr.top_block):
         # Blocks
         ##################################################
         self.single_pole_iir_filter_xx_0 = filter.single_pole_iir_filter_cc(0.1, 1)
-        self.osmosdr_sink_0 = osmosdr.sink( args="numchan=" + str(1) + " " + '' )
+        self.osmosdr_sink_0 = osmosdr.sink(
+            args="numchan=" + str(1) + " " + ''
+        )
+        self.osmosdr_sink_0.set_time_unknown_pps(osmosdr.time_spec_t())
         self.osmosdr_sink_0.set_sample_rate(samp_rate)
         self.osmosdr_sink_0.set_center_freq(freq - 300e3, 0)
         self.osmosdr_sink_0.set_freq_corr(0, 0)
@@ -46,20 +52,21 @@ class secplus_tx(gr.top_block):
         self.osmosdr_sink_0.set_bb_gain(0, 0)
         self.osmosdr_sink_0.set_antenna('', 0)
         self.osmosdr_sink_0.set_bandwidth(0, 0)
-
         self.blocks_vector_source_x_0 = blocks.vector_source_c(seq, False, 1, [])
         self.blocks_repeat_0 = blocks.repeat(gr.sizeof_gr_complex*1, 1000)
         self.blocks_multiply_xx_0 = blocks.multiply_vcc(1)
-        self.analog_sig_source_x_0 = analog.sig_source_c(samp_rate, analog.GR_COS_WAVE, 300e3, 0.9, 0)
+        self.analog_sig_source_x_0 = analog.sig_source_c(samp_rate, analog.GR_COS_WAVE, 300e3, 0.9, 0, 0)
+
+
 
         ##################################################
         # Connections
         ##################################################
-        self.connect((self.analog_sig_source_x_0, 0), (self.blocks_multiply_xx_0, 0))
+        self.connect((self.analog_sig_source_x_0, 0), (self.blocks_multiply_xx_0, 1))
         self.connect((self.blocks_multiply_xx_0, 0), (self.osmosdr_sink_0, 0))
         self.connect((self.blocks_repeat_0, 0), (self.single_pole_iir_filter_xx_0, 0))
         self.connect((self.blocks_vector_source_x_0, 0), (self.blocks_repeat_0, 0))
-        self.connect((self.single_pole_iir_filter_xx_0, 0), (self.blocks_multiply_xx_0, 1))
+        self.connect((self.single_pole_iir_filter_xx_0, 0), (self.blocks_multiply_xx_0, 0))
 
     def get_rolling(self):
         return self.rolling
@@ -87,8 +94,8 @@ class secplus_tx(gr.top_block):
 
     def set_samp_rate(self, samp_rate):
         self.samp_rate = samp_rate
-        self.osmosdr_sink_0.set_sample_rate(self.samp_rate)
         self.analog_sig_source_x_0.set_sampling_freq(self.samp_rate)
+        self.osmosdr_sink_0.set_sample_rate(self.samp_rate)
 
     def get_freq(self):
         return self.freq
@@ -98,12 +105,21 @@ class secplus_tx(gr.top_block):
         self.osmosdr_sink_0.set_center_freq(self.freq - 300e3, 0)
 
 
-def main(top_block_cls=secplus_tx, options=None):
 
+def main(top_block_cls=secplus_tx, options=None):
     tb = top_block_cls()
+
+    def sig_handler(sig=None, frame=None):
+        tb.stop()
+        tb.wait()
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, sig_handler)
+    signal.signal(signal.SIGTERM, sig_handler)
+
     tb.start()
     try:
-        raw_input('Press Enter to quit: ')
+        input('Press Enter to quit: ')
     except EOFError:
         pass
     tb.stop()
