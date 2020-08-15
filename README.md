@@ -7,7 +7,7 @@ This project is a software implementation of the Security+ and Security+ 2.0 rol
 
 * GNU Radio 3.8
 * gr-osmosdr
-* SDR hardware supported by gr-osmosdr
+* SDR hardware supported by gr-osmosdr (e.g. RTL-SDR, HackRF)
 
 ## Usage
 
