@@ -28,12 +28,12 @@ _OOK = {
 
 _ORDER = {
     0b0000: (0, 2, 1),
-    0b0001: (1, 2, 0),
+    0b0001: (2, 0, 1),
     0b0010: (0, 1, 2),
-    0b0100: (2, 0, 1),
+    0b0100: (1, 2, 0),
     0b0101: (1, 0, 2),
     0b0110: (2, 1, 0),
-    0b1000: (2, 0, 1),
+    0b1000: (1, 2, 0),
     0b1001: (2, 1, 0),
     0b1010: (0, 1, 2),
 }
@@ -76,12 +76,14 @@ def _decode_v2_half(code):
     order = _ORDER[(code[2] << 3) | (code[3] << 2) | (code[4] << 1) | code[5]]
     invert = _INVERT[(code[6] << 3) | (code[7] << 2) | (code[8] << 1) | code[9]]
 
-    parts = [code[10::3], code[11::3], code[12::3]]
+    parts_permuted = [code[10::3], code[11::3], code[12::3]]
     for i in range(3):
         if invert[i]:
-            parts[i] = [bit ^ 1 for bit in parts[i]]
+            parts_permuted[i] = [bit ^ 1 for bit in parts_permuted[i]]
 
-    parts = [parts[order[i]] for i in range(3)]
+    parts = [None] * 3
+    for i in range(3):
+        parts[order[i]] = parts_permuted[i]
 
     rolling = []
     for i in range(2, 10, 2):
@@ -129,6 +131,48 @@ def encode(counter, fixed):
         acc += fixed_base3[i]
         code.append(acc % 3)
     return code
+
+
+def _encode_v2_half(rolling, fixed):
+    code = [0, 0]
+    parts = [fixed[:10], fixed[10:], []]
+
+    for digit in rolling[:4]:
+        code.append(digit >> 1)
+        code.append(digit & 1)
+    for digit in rolling[4:]:
+        parts[2].append(digit >> 1)
+        parts[2].append(digit & 1)
+
+    order = _ORDER[(code[2] << 3) | (code[3] << 2) | (code[4] << 1) | code[5]]
+    invert = _INVERT[(code[6] << 3) | (code[7] << 2) | (code[8] << 1) | code[9]]
+
+    parts_permuted = [parts[order[i]] for i in range(3)]
+
+    for i in range(3):
+        if invert[i]:
+            parts_permuted[i] = [bit ^ 1 for bit in parts_permuted[i]]
+
+    for i in range(10):
+        code += [parts_permuted[0][i], parts_permuted[1][i], parts_permuted[2][i]]
+
+    return code
+
+
+def encode_v2(counter, fixed):
+    counter = int("{0:028b}".format(counter)[::-1], 2)
+    counter_base3 = [0] * 18
+    for i in range(17, -1, -1):
+        counter_base3[i] = counter % 3
+        counter //= 3
+    rolling1 = counter_base3[14:18] + counter_base3[6:10] + counter_base3[1:2]
+    rolling2 = counter_base3[10:14] + counter_base3[2:6] + counter_base3[0:1]
+
+    fixed_bits = [int(bit) for bit in "{0:040b}".format(fixed)]
+    fixed1 = fixed_bits[:20]
+    fixed2 = fixed_bits[20:]
+
+    return _encode_v2_half(rolling1, fixed1) + _encode_v2_half(rolling2, fixed2)
 
 
 def ook(counter, fixed, fast=True):
