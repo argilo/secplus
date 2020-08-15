@@ -19,6 +19,13 @@
 
 from __future__ import division
 
+_OOK = {
+    -1: [0, 0, 0, 0],
+    0: [0, 0, 0, 1],
+    1: [0, 0, 1, 1],
+    2: [0, 1, 1, 1]
+}
+
 _ORDER = {
     0b0000: (0, 2, 1),
     0b0001: (1, 2, 0),
@@ -65,7 +72,7 @@ def decode(code):
     return rolling, fixed
 
 
-def decode_v2_half(code):
+def _decode_v2_half(code):
     order = _ORDER[(code[2] << 3) | (code[3] << 2) | (code[4] << 1) | code[5]]
     invert = _INVERT[(code[6] << 3) | (code[7] << 2) | (code[8] << 1) | code[9]]
 
@@ -88,8 +95,8 @@ def decode_v2_half(code):
 
 
 def decode_v2(code):
-    rolling1, fixed1 = decode_v2_half(code[:40])
-    rolling2, fixed2 = decode_v2_half(code[40:])
+    rolling1, fixed1 = _decode_v2_half(code[:40])
+    rolling2, fixed2 = _decode_v2_half(code[40:])
 
     rolling_digits = rolling2[8:] + rolling1[8:]
     rolling_digits += rolling2[4:8] + rolling1[4:8]
@@ -125,13 +132,12 @@ def encode(counter, fixed):
 
 
 def ook(counter, fixed, fast=True):
-    OOK = {-1: [0, 0, 0, 0], 0: [0, 0, 0, 1], 1: [0, 0, 1, 1], 2: [0, 1, 1, 1]}
     code = encode(counter, fixed)
     blank = [-1] * (10 if fast else 29)
     code = [0] + code[0:20] + blank + [2] + code[20:40] + blank
     ook_bits = []
     for symbol in code:
-        ook_bits += OOK[symbol]
+        ook_bits += _OOK[symbol]
     return ook_bits
 
 
