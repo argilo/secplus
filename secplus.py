@@ -186,11 +186,10 @@ def ook(counter, fixed, fast=True):
 
 
 def pretty(rolling, fixed):
-    return "rolling={0}  fixed={1}  ({2})".format(rolling, fixed,
-                                                  fixed_pretty(fixed))
+    return "Security+:  rolling={0}  fixed={1}  ({2})".format(rolling, fixed, _fixed_pretty(fixed))
 
 
-def fixed_pretty(fixed):
+def _fixed_pretty(fixed):
     switch_id = fixed % 3
     id0 = (fixed // 3) % 3
     id1 = (fixed // 3**2) % 3
@@ -222,3 +221,11 @@ def fixed_pretty(fixed):
         result += " button={0}".format(button)
 
     return result
+
+
+def pretty_v2(rolling, fixed):
+    return "Security+ 2.0:  rolling={0}  fixed={1}  ({2})".format(rolling, fixed, _fixed_pretty_v2(fixed))
+
+
+def _fixed_pretty_v2(fixed):
+    return "button={0} remote_id={1}".format(fixed >> 32, fixed & 0xffffffff)
