@@ -6,7 +6,7 @@
 #
 # GNU Radio Python Flow Graph
 # Title: Secplus Rx
-# GNU Radio version: 3.8.0.0
+# GNU Radio version: 3.8.1.0
 
 from distutils.version import StrictVersion
 
@@ -37,6 +37,7 @@ import math
 import osmosdr
 import time
 import secplus_decode
+
 from gnuradio import qtgui
 
 class secplus_rx(gr.top_block, Qt.QWidget):
@@ -194,6 +195,7 @@ class secplus_rx(gr.top_block, Qt.QWidget):
         self.connect((self.rational_resampler_xxx_1, 0), (self.qtgui_time_sink_x_0, 0))
         self.connect((self.rational_resampler_xxx_1, 0), (self.secplus_decode, 0))
 
+
     def closeEvent(self, event):
         self.settings = Qt.QSettings("GNU Radio", "secplus_rx")
         self.settings.setValue("geometry", self.saveGeometry())
@@ -244,6 +246,8 @@ class secplus_rx(gr.top_block, Qt.QWidget):
 
 
 
+
+
 def main(top_block_cls=secplus_rx, options=None):
 
     if StrictVersion("4.5.0") <= StrictVersion(Qt.qVersion()) < StrictVersion("5.0.0"):
@@ -252,7 +256,9 @@ def main(top_block_cls=secplus_rx, options=None):
     qapp = Qt.QApplication(sys.argv)
 
     tb = top_block_cls()
+
     tb.start()
+
     tb.show()
 
     def sig_handler(sig=None, frame=None):
@@ -268,9 +274,9 @@ def main(top_block_cls=secplus_rx, options=None):
     def quitting():
         tb.stop()
         tb.wait()
+
     qapp.aboutToQuit.connect(quitting)
     qapp.exec_()
-
 
 if __name__ == '__main__':
     main()
