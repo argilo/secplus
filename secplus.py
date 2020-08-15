@@ -133,6 +133,16 @@ def encode(counter, fixed):
     return code
 
 
+def ook(counter, fixed, fast=True):
+    code = encode(counter, fixed)
+    blank = [-1] * (10 if fast else 29)
+    code = [0] + code[0:20] + blank + [2] + code[20:40] + blank
+    ook_bits = []
+    for symbol in code:
+        ook_bits += _OOK[symbol]
+    return ook_bits
+
+
 def _encode_v2_half(rolling, fixed):
     code = [0, 0]
     parts = [fixed[:10], fixed[10:], []]
@@ -175,14 +185,24 @@ def encode_v2(counter, fixed):
     return _encode_v2_half(rolling1, fixed1) + _encode_v2_half(rolling2, fixed2)
 
 
-def ook(counter, fixed, fast=True):
-    code = encode(counter, fixed)
-    blank = [-1] * (10 if fast else 29)
-    code = [0] + code[0:20] + blank + [2] + code[20:40] + blank
-    ook_bits = []
-    for symbol in code:
-        ook_bits += _OOK[symbol]
-    return ook_bits
+def _manchester(code):
+    output = []
+    for bit in code:
+        if bit == 0:
+            output += [1, 0]
+        else:
+            output += [0, 1]
+    return output
+
+
+def encode_v2_manchester(counter, fixed):
+    preamble = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0]
+    code = encode_v2(counter, fixed)
+    packet1 = preamble + [0] + code[0:40]
+    packet2 = preamble + [1] + code[0:40]
+    blank = [0] * 33
+
+    return _manchester(packet1) + blank + _manchester(packet2) + blank
 
 
 def pretty(rolling, fixed):
