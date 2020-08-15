@@ -87,9 +87,9 @@ class secplus_rx(gr.top_block, Qt.QWidget):
         # Blocks
         ##################################################
         # Create the options list
-        self._freq_options = (315150000, 390150000, )
+        self._freq_options = (310150000, 315150000, 390150000, )
         # Create the labels list
-        self._freq_labels = ('315 MHz', '390 MHz', )
+        self._freq_labels = ('310 MHz', '315 MHz', '390 MHz', )
         # Create the combo box
         # Create the radio buttons
         self._freq_group_box = Qt.QGroupBox('Frequency' + ": ")

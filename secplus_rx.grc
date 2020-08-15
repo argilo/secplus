@@ -62,16 +62,16 @@ blocks:
     comment: ''
     gui_hint: ''
     label: Frequency
-    label0: 315 MHz
-    label1: 390 MHz
-    label2: ''
+    label0: 310 MHz
+    label1: 315 MHz
+    label2: 390 MHz
     label3: ''
     label4: ''
     labels: '[]'
-    num_opts: '2'
-    option0: '315150000'
-    option1: '390150000'
-    option2: '2'
+    num_opts: '3'
+    option0: '310150000'
+    option1: '315150000'
+    option2: '390150000'
     option3: '3'
     option4: '4'
     options: '[0, 1, 2]'
