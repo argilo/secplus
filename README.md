@@ -3,6 +3,12 @@ secplus
 
 This project is a software implementation of the Security+ and Security+ 2.0 rolling code systems used in garage door openers made by Chamberlain, LiftMaster, Craftsman and others. Sample GNU Radio flowgraphs for receiving and transmitting codes are provided. A stand-alone Python module can be used to build other applications.
 
+## Requirements
+
+* GNU Radio 3.8
+* gr-osmosdr
+* SDR hardware supported by gr-osmosdr
+
 ## Usage
 
 ### Receiving:
