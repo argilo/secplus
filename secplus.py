@@ -302,7 +302,8 @@ def _fixed_pretty(fixed):
 
 def pretty_v2(rolling, fixed):
     """Pretty-print a Security+ 2.0 rolling and fixed code"""
-    return "Security+ 2.0:  rolling={0}  fixed={1}  ({2})".format(rolling, fixed, _fixed_pretty_v2(fixed))
+    return "Security+ 2.0:  rolling={0}  fixed={1}  ({2})".format(rolling, fixed,
+                                                                  _fixed_pretty_v2(fixed))
 
 
 def _fixed_pretty_v2(fixed):
