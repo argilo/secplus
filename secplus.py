@@ -105,7 +105,7 @@ def decode_v2(code):
     rolling = 0
     for digit in rolling_digits:
         rolling = (rolling * 3) + digit
-    rolling = int(f"{rolling:028b}"[::-1], 2)
+    rolling = int("{0:028b}".format(rolling)[::-1], 2)
 
     fixed = int("".join(str(bit) for bit in fixed1 + fixed2), 2)
     return rolling, fixed
