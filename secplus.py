@@ -17,6 +17,12 @@
 # along with secplus.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+"""This module encodes and decodes Security+ and Security+ 2.0 rolling and fixed
+codes, provides utility functions to prepare on-off keying sequences for
+transmission, and pretty-prints the codes. It can be used to build stand-alone
+applications.
+"""
+
 from __future__ import division
 
 _OOK = {
@@ -52,6 +58,12 @@ _INVERT = {
 
 
 def decode(code):
+    """Decode a Security+ transmission and return the rolling and fixed codes.
+
+    Arguments:
+    code -- a list containing the 40 payload symbols from a pair of packets
+    """
+
     rolling = 0
     fixed = 0
 
@@ -105,6 +117,11 @@ def _decode_v2_half(code):
 
 
 def decode_v2(code):
+    """Decode a Security+ 2.0 transmission and return the rolling and fixed codes.
+
+    Arguments:
+    code -- a list containing the 80 payload bits from a pair of packets
+    """
     rolling1, fixed1 = _decode_v2_half(code[:40])
     rolling2, fixed2 = _decode_v2_half(code[40:])
 
@@ -124,6 +141,13 @@ def decode_v2(code):
 
 
 def encode(counter, fixed):
+    """Encode a Security+ payload into 40 payload symbols
+
+    Arguments:
+    counter -- the rolling code
+    fixed -- the fixed code
+    """
+
     counter = int("{0:032b}".format(counter & 0xfffffffe)[::-1], 2)
     counter_base3 = [0] * 20
     fixed_base3 = [0] * 20
@@ -144,6 +168,14 @@ def encode(counter, fixed):
 
 
 def ook(counter, fixed, fast=True):
+    """Encode a Security+ payload and produce an OOK stream for transmission
+
+    Arguments:
+    counter -- the rolling code
+    fixed -- the fixed code
+    fast -- when True, shortens the time between packets
+    """
+
     code = encode(counter, fixed)
     blank = [-1] * (10 if fast else 29)
     code = [0] + code[0:20] + blank + [2] + code[20:40] + blank
@@ -180,6 +212,13 @@ def _encode_v2_half(rolling, fixed):
 
 
 def encode_v2(counter, fixed):
+    """Encode a Security+ 2.0 payload into 80 payload bits
+
+    Arguments:
+    counter -- the rolling code
+    fixed -- the fixed code
+    """
+
     counter = int("{0:028b}".format(counter)[::-1], 2)
     counter_base3 = [0] * 18
     for i in range(17, -1, -1):
@@ -206,6 +245,13 @@ def _manchester(code):
 
 
 def encode_v2_manchester(counter, fixed):
+    """Encode a Security+ 2.0 payload and produce a Manchester stream for transmission
+
+    Arguments:
+    counter -- the rolling code
+    fixed -- the fixed code
+    """
+
     preamble = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0]
     code = encode_v2(counter, fixed)
     packet1 = preamble + [0] + code[:40]
@@ -216,6 +262,7 @@ def encode_v2_manchester(counter, fixed):
 
 
 def pretty(rolling, fixed):
+    """Pretty-print a Security+ rolling and fixed code"""
     return "Security+:  rolling={0}  fixed={1}  ({2})".format(rolling, fixed, _fixed_pretty(fixed))
 
 
@@ -254,6 +301,7 @@ def _fixed_pretty(fixed):
 
 
 def pretty_v2(rolling, fixed):
+    """Pretty-print a Security+ 2.0 rolling and fixed code"""
     return "Security+ 2.0:  rolling={0}  fixed={1}  ({2})".format(rolling, fixed, _fixed_pretty_v2(fixed))
 
 
