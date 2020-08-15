@@ -37,6 +37,7 @@ import math
 import osmosdr
 import time
 import secplus_decode
+import secplus_v2_decode
 
 from gnuradio import qtgui
 
@@ -79,7 +80,7 @@ class secplus_rx(gr.top_block, Qt.QWidget):
         self.threshold = threshold = 0.05
         self.samp_rate = samp_rate = 2000000
         self.freq = freq = 315150000
-        self.decim2 = decim2 = 100
+        self.decim2 = decim2 = 50
         self.decim1 = decim1 = 2
 
         ##################################################
@@ -110,6 +111,7 @@ class secplus_rx(gr.top_block, Qt.QWidget):
         self._freq_button_group.buttonClicked[int].connect(
             lambda i: self.set_freq(self._freq_options[i]))
         self.top_grid_layout.addWidget(self._freq_group_box)
+        self.secplus_v2_decode = secplus_v2_decode.blk(samp_rate=samp_rate // decim1 // decim2, threshold=threshold)
         self.secplus_decode = secplus_decode.blk(samp_rate=samp_rate // decim1 // decim2, threshold=threshold)
         self.rational_resampler_xxx_1 = filter.rational_resampler_fff(
                 interpolation=1,
@@ -194,6 +196,7 @@ class secplus_rx(gr.top_block, Qt.QWidget):
         self.connect((self.rational_resampler_xxx_0, 0), (self.blocks_complex_to_mag_0, 0))
         self.connect((self.rational_resampler_xxx_1, 0), (self.qtgui_time_sink_x_0, 0))
         self.connect((self.rational_resampler_xxx_1, 0), (self.secplus_decode, 0))
+        self.connect((self.rational_resampler_xxx_1, 0), (self.secplus_v2_decode, 0))
 
 
     def closeEvent(self, event):
@@ -208,6 +211,7 @@ class secplus_rx(gr.top_block, Qt.QWidget):
         self.threshold = threshold
         self.qtgui_time_sink_x_0.set_trigger_mode(qtgui.TRIG_MODE_AUTO, qtgui.TRIG_SLOPE_POS, self.threshold, 0, 0, "")
         self.secplus_decode.threshold = self.threshold
+        self.secplus_v2_decode.threshold = self.threshold
 
     def get_samp_rate(self):
         return self.samp_rate
@@ -218,6 +222,7 @@ class secplus_rx(gr.top_block, Qt.QWidget):
         self.osmosdr_source_0.set_sample_rate(self.samp_rate)
         self.qtgui_time_sink_x_0.set_samp_rate(self.samp_rate // self.decim1 // self.decim2)
         self.secplus_decode.samp_rate = self.samp_rate // self.decim1 // self.decim2
+        self.secplus_v2_decode.samp_rate = self.samp_rate // self.decim1 // self.decim2
 
     def get_freq(self):
         return self.freq
@@ -235,6 +240,7 @@ class secplus_rx(gr.top_block, Qt.QWidget):
         self.qtgui_time_sink_x_0.set_samp_rate(self.samp_rate // self.decim1 // self.decim2)
         self.rational_resampler_xxx_1.set_taps([1.0/self.decim2]*self.decim2)
         self.secplus_decode.samp_rate = self.samp_rate // self.decim1 // self.decim2
+        self.secplus_v2_decode.samp_rate = self.samp_rate // self.decim1 // self.decim2
 
     def get_decim1(self):
         return self.decim1
@@ -243,6 +249,7 @@ class secplus_rx(gr.top_block, Qt.QWidget):
         self.decim1 = decim1
         self.qtgui_time_sink_x_0.set_samp_rate(self.samp_rate // self.decim1 // self.decim2)
         self.secplus_decode.samp_rate = self.samp_rate // self.decim1 // self.decim2
+        self.secplus_v2_decode.samp_rate = self.samp_rate // self.decim1 // self.decim2
 
 
 

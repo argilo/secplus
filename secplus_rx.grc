@@ -48,7 +48,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: '100'
+    value: '50'
   states:
     bus_sink: false
     bus_source: false
@@ -606,7 +606,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [576, 364.0]
+    coordinate: [576, 420.0]
     rotation: 180
     state: enabled
 - name: rational_resampler_xxx_0
@@ -646,7 +646,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [792, 316.0]
+    coordinate: [792, 332.0]
     rotation: 180
     state: enabled
 - name: secplus_decode
@@ -705,7 +705,74 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [584, 292.0]
+    coordinate: [576, 276.0]
+    rotation: 180
+    state: enabled
+- name: secplus_v2_decode
+  id: epy_block
+  parameters:
+    _source_code: "#\n# Copyright 2020 Clayton Smith (argilo@gmail.com)\n#\n# This\
+      \ file is part of secplus.\n#\n# secplus is free software: you can redistribute\
+      \ it and/or modify\n# it under the terms of the GNU General Public License as\
+      \ published by\n# the Free Software Foundation, either version 3 of the License,\
+      \ or\n# (at your option) any later version.\n#\n# secplus is distributed in\
+      \ the hope that it will be useful,\n# but WITHOUT ANY WARRANTY; without even\
+      \ the implied warranty of\n# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\
+      \  See the\n# GNU General Public License for more details.\n#\n# You should\
+      \ have received a copy of the GNU General Public License\n# along with secplus.\
+      \  If not, see <http://www.gnu.org/licenses/>.\n#\n\nfrom __future__ import\
+      \ print_function\nimport numpy as np\nfrom gnuradio import gr\nimport secplus\n\
+      \n\nclass blk(gr.sync_block):\n    \"\"\"Decoder for Chamberlain garage door\
+      \ openers\"\"\"\n\n    def __init__(self, samp_rate=10000, threshold=0.02):\n\
+      \        gr.sync_block.__init__(\n            self,\n            name='Security+\
+      \ 2.0 Decoder',\n\n            in_sig=[np.float32],\n            out_sig=[]\n\
+      \        )\n        self.samp_rate = samp_rate\n        self.threshold = threshold\n\
+      \        self.last_sample = 0.0\n        self.last_edge = 0\n        self.buffer\
+      \ = []\n        self.last_pair = []\n        self.pair = []\n\n    def work(self,\
+      \ input_items, output_items):\n        for n, sample in enumerate(input_items[0]):\n\
+      \            current_sample = self.nitems_read(0) + n\n            if self.last_sample\
+      \ < self.threshold <= sample:\n                # rising edge\n             \
+      \   self.process_edge(True, current_sample - self.last_edge)\n             \
+      \   self.last_edge = current_sample\n            elif self.last_sample >= self.threshold\
+      \ > sample:\n                # falling edge\n                self.process_edge(False,\
+      \ current_sample - self.last_edge)\n                self.last_edge = current_sample\n\
+      \            if current_sample - self.last_edge >= 0.625e-3 * self.samp_rate:\n\
+      \                self.buffer.append(0)\n                self.buffer.append(0)\n\
+      \                self.process_buffer()\n                self.buffer = []\n \
+      \           self.last_sample = sample\n        return len(input_items[0])\n\n\
+      \    def process_edge(self, rising, samples):\n        if samples < 0.125e-3\
+      \ * self.samp_rate:\n            self.buffer = []\n        elif samples < 0.375e-3\
+      \ * self.samp_rate:\n            self.buffer.append(0 if rising else 1)\n  \
+      \      elif samples < 0.625e-3 * self.samp_rate:\n            self.buffer.append(0\
+      \ if rising else 1)\n            self.buffer.append(0 if rising else 1)\n  \
+      \      else:\n            self.buffer = []\n\n    def process_buffer(self):\n\
+      \        manchester = \"\".join(str(b) for b in self.buffer)\n        start\
+      \ = manchester.find(\"1010101010101010101010101010101001010101\")\n        if\
+      \ start == -1:\n            return\n        manchester = manchester[start:start+124]\n\
+      \        baseband = []\n        for i in range(0, len(manchester), 2):\n   \
+      \         if manchester[i:i+2] == \"01\":\n                baseband.append(1)\n\
+      \            elif manchester[i:i+2] == \"10\":\n                baseband.append(0)\n\
+      \            else:\n                return\n    \n        if baseband[21] ==\
+      \ 0:\n            self.pair = baseband[22:]\n        elif baseband[21] == 1\
+      \ and len(self.pair) == 40:\n            self.pair += baseband[22:]\n\n    \
+      \    if len(self.pair) == 80 and self.pair != self.last_pair:\n            rolling,\
+      \ fixed = secplus.decode_v2(self.pair)\n            print(secplus.pretty_v2(rolling,\
+      \ fixed))\n            self.last_pair = self.pair\n"
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: samp_rate // decim1 // decim2
+    threshold: threshold
+  states:
+    _io_cache: ('Security+ 2.0 Decoder', 'blk', [('samp_rate', '10000'), ('threshold',
+      '0.02')], [('0', 'float', 1)], [], 'Decoder for Chamberlain garage door openers',
+      ['samp_rate', 'threshold'])
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [560, 348.0]
     rotation: 180
     state: enabled
 
@@ -716,6 +783,7 @@ connections:
 - [rational_resampler_xxx_0, '0', blocks_complex_to_mag_0, '0']
 - [rational_resampler_xxx_1, '0', qtgui_time_sink_x_0, '0']
 - [rational_resampler_xxx_1, '0', secplus_decode, '0']
+- [rational_resampler_xxx_1, '0', secplus_v2_decode, '0']
 
 metadata:
   file_format: 1
