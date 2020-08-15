@@ -73,8 +73,14 @@ def decode(code):
 
 
 def _decode_v2_half(code):
-    order = _ORDER[(code[2] << 3) | (code[3] << 2) | (code[4] << 1) | code[5]]
-    invert = _INVERT[(code[6] << 3) | (code[7] << 2) | (code[8] << 1) | code[9]]
+    if code[:2] != [0, 0]:
+        raise ValueError("First two bits of packet were not zero")
+
+    try:
+        order = _ORDER[(code[2] << 3) | (code[3] << 2) | (code[4] << 1) | code[5]]
+        invert = _INVERT[(code[6] << 3) | (code[7] << 2) | (code[8] << 1) | code[9]]
+    except KeyError:
+        raise ValueError("Illegal value for ternary bit")
 
     parts_permuted = [code[10::3], code[11::3], code[12::3]]
     for i in range(3):
@@ -90,6 +96,8 @@ def _decode_v2_half(code):
         rolling.append((code[i] << 1) | code[i+1])
     for i in range(0, 10, 2):
         rolling.append((parts[2][i] << 1) | parts[2][i+1])
+    if 3 in rolling:
+        raise ValueError("Illegal value for ternary bit")
 
     fixed = parts[0] + parts[1]
 
@@ -107,6 +115,8 @@ def decode_v2(code):
     rolling = 0
     for digit in rolling_digits:
         rolling = (rolling * 3) + digit
+    if rolling >= 2**28:
+        raise ValueError("Rolling code was not in expected range")
     rolling = int("{0:028b}".format(rolling)[::-1], 2)
 
     fixed = int("".join(str(bit) for bit in fixed1 + fixed2), 2)

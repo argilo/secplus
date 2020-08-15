@@ -93,6 +93,9 @@ class blk(gr.sync_block):
             self.pair += baseband[22:]
 
         if len(self.pair) == 80 and self.pair != self.last_pair:
-            rolling, fixed = secplus.decode_v2(self.pair)
-            print(secplus.pretty_v2(rolling, fixed))
-            self.last_pair = self.pair
+            try:
+                rolling, fixed = secplus.decode_v2(self.pair)
+                print(secplus.pretty_v2(rolling, fixed))
+                self.last_pair = self.pair
+            except ValueError:
+                pass

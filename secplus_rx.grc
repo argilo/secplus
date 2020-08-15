@@ -755,9 +755,10 @@ blocks:
       \            else:\n                return\n    \n        if baseband[21] ==\
       \ 0:\n            self.pair = baseband[22:]\n        elif baseband[21] == 1\
       \ and len(self.pair) == 40:\n            self.pair += baseband[22:]\n\n    \
-      \    if len(self.pair) == 80 and self.pair != self.last_pair:\n            rolling,\
-      \ fixed = secplus.decode_v2(self.pair)\n            print(secplus.pretty_v2(rolling,\
-      \ fixed))\n            self.last_pair = self.pair\n"
+      \    if len(self.pair) == 80 and self.pair != self.last_pair:\n            try:\n\
+      \                rolling, fixed = secplus.decode_v2(self.pair)\n           \
+      \     print(secplus.pretty_v2(rolling, fixed))\n                self.last_pair\
+      \ = self.pair\n            except ValueError:\n                pass\n"
     affinity: ''
     alias: ''
     comment: ''
