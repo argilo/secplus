@@ -81,7 +81,7 @@ def _decode_v2_half(code):
         if invert[i]:
             parts_permuted[i] = [bit ^ 1 for bit in parts_permuted[i]]
 
-    parts = [None] * 3
+    parts = [[], [], []]
     for i in range(3):
         parts[order[i]] = parts_permuted[i]
 
