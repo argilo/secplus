@@ -18,7 +18,7 @@ options:
     realtime_scheduling: ''
     run: 'True'
     run_command: '{python} -u {filename}'
-    run_options: prompt
+    run_options: run
     sizing_mode: fixed
     thread_safe_setters: ''
     title: ''
@@ -27,47 +27,11 @@ options:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [8, 8]
+    coordinate: [8, 12.0]
     rotation: 0
     state: enabled
 
 blocks:
-- name: fixed
-  id: variable
-  parameters:
-    comment: ''
-    value: '1234567890'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [112, 100]
-    rotation: 0
-    state: enabled
-- name: freq
-  id: variable
-  parameters:
-    comment: ''
-    value: 315.15e6
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [8, 316]
-    rotation: 0
-    state: enabled
-- name: rolling
-  id: variable
-  parameters:
-    comment: ''
-    value: '1234567890'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [8, 100]
-    rotation: 0
-    state: enabled
 - name: samp_rate
   id: variable
   parameters:
@@ -111,7 +75,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [840, 252.0]
+    coordinate: [776, 292.0]
     rotation: 180
     state: enabled
 - name: blocks_multiply_xx_0
@@ -129,7 +93,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [696, 264.0]
+    coordinate: [632, 304.0]
     rotation: 180
     state: enabled
 - name: blocks_repeat_0
@@ -147,7 +111,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [456, 132]
+    coordinate: [392, 172.0]
     rotation: 0
     state: enabled
 - name: blocks_vector_source_x_0
@@ -167,9 +131,43 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [296, 116.0]
+    coordinate: [232, 156.0]
     rotation: 0
     state: enabled
+- name: fixed
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: Fixed code
+    short_id: ''
+    type: intx
+    value: '1234567890'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [576, 12.0]
+    rotation: 0
+    state: true
+- name: freq
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: Frequency
+    short_id: f
+    type: intx
+    value: '315150000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [328, 12.0]
+    rotation: 0
+    state: true
 - name: import_0
   id: import
   parameters:
@@ -180,7 +178,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [8, 388]
+    coordinate: [8, 100.0]
     rotation: 0
     state: enabled
 - name: osmosdr_sink_0
@@ -441,9 +439,26 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [408, 204.0]
+    coordinate: [344, 244.0]
     rotation: 180
     state: enabled
+- name: rolling
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: Rolling code
+    short_id: ''
+    type: intx
+    value: '1234567890'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [448, 12.0]
+    rotation: 0
+    state: true
 - name: single_pole_iir_filter_xx_0
   id: single_pole_iir_filter_xx
   parameters:
@@ -459,7 +474,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [624, 132]
+    coordinate: [560, 172.0]
     rotation: 0
     state: enabled
 

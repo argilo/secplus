@@ -6,7 +6,7 @@
 #
 # GNU Radio Python Flow Graph
 # Title: Secplus Tx
-# GNU Radio version: 3.8.0.0
+# GNU Radio version: 3.8.1.0
 
 from gnuradio import analog
 from gnuradio import blocks
@@ -22,19 +22,24 @@ import osmosdr
 import time
 import secplus
 
+
 class secplus_tx(gr.top_block):
 
-    def __init__(self):
+    def __init__(self, fixed=1234567890, freq=315150000, rolling=1234567890):
         gr.top_block.__init__(self, "Secplus Tx")
+
+        ##################################################
+        # Parameters
+        ##################################################
+        self.fixed = fixed
+        self.freq = freq
+        self.rolling = rolling
 
         ##################################################
         # Variables
         ##################################################
-        self.rolling = rolling = 1234567890
-        self.fixed = fixed = 1234567890
         self.seq = seq = [0]*100 + secplus.ook(rolling, fixed, fast=False)*4 + [0]*100
         self.samp_rate = samp_rate = 2e6
-        self.freq = freq = 315.15e6
 
         ##################################################
         # Blocks
@@ -68,18 +73,26 @@ class secplus_tx(gr.top_block):
         self.connect((self.blocks_vector_source_x_0, 0), (self.blocks_repeat_0, 0))
         self.connect((self.single_pole_iir_filter_xx_0, 0), (self.blocks_multiply_xx_0, 0))
 
-    def get_rolling(self):
-        return self.rolling
-
-    def set_rolling(self, rolling):
-        self.rolling = rolling
-        self.set_seq([0]*100 + secplus.ook(self.rolling, self.fixed, fast=False)*4 + [0]*100)
 
     def get_fixed(self):
         return self.fixed
 
     def set_fixed(self, fixed):
         self.fixed = fixed
+        self.set_seq([0]*100 + secplus.ook(self.rolling, self.fixed, fast=False)*4 + [0]*100)
+
+    def get_freq(self):
+        return self.freq
+
+    def set_freq(self, freq):
+        self.freq = freq
+        self.osmosdr_sink_0.set_center_freq(self.freq - 300e3, 0)
+
+    def get_rolling(self):
+        return self.rolling
+
+    def set_rolling(self, rolling):
+        self.rolling = rolling
         self.set_seq([0]*100 + secplus.ook(self.rolling, self.fixed, fast=False)*4 + [0]*100)
 
     def get_seq(self):
@@ -97,32 +110,39 @@ class secplus_tx(gr.top_block):
         self.analog_sig_source_x_0.set_sampling_freq(self.samp_rate)
         self.osmosdr_sink_0.set_sample_rate(self.samp_rate)
 
-    def get_freq(self):
-        return self.freq
 
-    def set_freq(self, freq):
-        self.freq = freq
-        self.osmosdr_sink_0.set_center_freq(self.freq - 300e3, 0)
 
+
+def argument_parser():
+    parser = ArgumentParser()
+    parser.add_argument(
+        "--fixed", dest="fixed", type=intx, default=1234567890,
+        help="Set Fixed code [default=%(default)r]")
+    parser.add_argument(
+        "-f", "--freq", dest="freq", type=intx, default=315150000,
+        help="Set Frequency [default=%(default)r]")
+    parser.add_argument(
+        "--rolling", dest="rolling", type=intx, default=1234567890,
+        help="Set Rolling code [default=%(default)r]")
+    return parser
 
 
 def main(top_block_cls=secplus_tx, options=None):
-    tb = top_block_cls()
+    if options is None:
+        options = argument_parser().parse_args()
+    tb = top_block_cls(fixed=options.fixed, freq=options.freq, rolling=options.rolling)
 
     def sig_handler(sig=None, frame=None):
         tb.stop()
         tb.wait()
+
         sys.exit(0)
 
     signal.signal(signal.SIGINT, sig_handler)
     signal.signal(signal.SIGTERM, sig_handler)
 
     tb.start()
-    try:
-        input('Press Enter to quit: ')
-    except EOFError:
-        pass
-    tb.stop()
+
     tb.wait()
 
 
