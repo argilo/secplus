@@ -167,7 +167,7 @@ def encode(counter, fixed):
     return code
 
 
-def ook(counter, fixed, fast=True):
+def encode_ook(counter, fixed, fast=True):
     """Encode a Security+ payload and produce an OOK stream for transmission
 
     Arguments:

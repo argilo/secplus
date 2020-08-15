@@ -38,7 +38,7 @@ class secplus_tx(gr.top_block):
         ##################################################
         # Variables
         ##################################################
-        self.seq = seq = [0]*100 + secplus.ook(rolling, fixed, fast=False)*4 + [0]*100
+        self.seq = seq = [0]*100 + secplus.encode_ook(rolling, fixed, fast=False)*4 + [0]*100
         self.samp_rate = samp_rate = 2e6
 
         ##################################################
@@ -79,7 +79,7 @@ class secplus_tx(gr.top_block):
 
     def set_fixed(self, fixed):
         self.fixed = fixed
-        self.set_seq([0]*100 + secplus.ook(self.rolling, self.fixed, fast=False)*4 + [0]*100)
+        self.set_seq([0]*100 + secplus.encode_ook(self.rolling, self.fixed, fast=False)*4 + [0]*100)
 
     def get_freq(self):
         return self.freq
@@ -93,7 +93,7 @@ class secplus_tx(gr.top_block):
 
     def set_rolling(self, rolling):
         self.rolling = rolling
-        self.set_seq([0]*100 + secplus.ook(self.rolling, self.fixed, fast=False)*4 + [0]*100)
+        self.set_seq([0]*100 + secplus.encode_ook(self.rolling, self.fixed, fast=False)*4 + [0]*100)
 
     def get_seq(self):
         return self.seq

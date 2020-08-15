@@ -48,7 +48,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: '[0]*100 + secplus.ook(rolling, fixed, fast=False)*4 + [0]*100'
+    value: '[0]*100 + secplus.encode_ook(rolling, fixed, fast=False)*4 + [0]*100'
   states:
     bus_sink: false
     bus_source: false
