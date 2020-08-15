@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Clayton Smith (argilo@gmail.com)
+# Copyright 2016,2020 Clayton Smith (argilo@gmail.com)
 #
 # This file is part of secplus.
 #
@@ -18,6 +18,30 @@
 #
 
 from __future__ import division
+
+_ORDER = {
+    0b0000: (0, 2, 1),
+    0b0001: (1, 2, 0),
+    0b0010: (0, 1, 2),
+    0b0100: (2, 0, 1),
+    0b0101: (1, 0, 2),
+    0b0110: (2, 1, 0),
+    0b1000: (2, 0, 1),
+    0b1001: (2, 1, 0),
+    0b1010: (0, 1, 2),
+}
+
+_INVERT = {
+    0b0000: (True, True, False),
+    0b0001: (False, True, False),
+    0b0010: (False, False, True),
+    0b0100: (True, True, True),
+    0b0101: (True, False, True),
+    0b0110: (False, True, True),
+    0b1000: (True, False, False),
+    0b1001: (False, False, False),
+    0b1010: (True, False, True),
+}
 
 
 def decode(code):
@@ -38,6 +62,45 @@ def decode(code):
 
     rolling = int("{0:032b}".format(rolling)[::-1], 2)
     fixed = int("{0:032b}".format(fixed), 2)
+    return rolling, fixed
+
+
+def decode_v2_half(code):
+    order = _ORDER[(code[2] << 3) | (code[3] << 2) | (code[4] << 1) | code[5]]
+    invert = _INVERT[(code[6] << 3) | (code[7] << 2) | (code[8] << 1) | code[9]]
+
+    parts = [code[10::3], code[11::3], code[12::3]]
+    for i in range(3):
+        if invert[i]:
+            parts[i] = [bit ^ 1 for bit in parts[i]]
+
+    parts = [parts[order[i]] for i in range(3)]
+
+    rolling = []
+    for i in range(2, 10, 2):
+        rolling.append((code[i] << 1) | code[i+1])
+    for i in range(0, 10, 2):
+        rolling.append((parts[2][i] << 1) | parts[2][i+1])
+
+    fixed = parts[0] + parts[1]
+
+    return rolling, fixed
+
+
+def decode_v2(code):
+    rolling1, fixed1 = decode_v2_half(code[:40])
+    rolling2, fixed2 = decode_v2_half(code[40:])
+
+    rolling_digits = rolling2[8:] + rolling1[8:]
+    rolling_digits += rolling2[4:8] + rolling1[4:8]
+    rolling_digits += rolling2[:4] + rolling1[:4]
+
+    rolling = 0
+    for digit in rolling_digits:
+        rolling = (rolling * 3) + digit
+    rolling = int(f"{rolling:028b}"[::-1], 2)
+
+    fixed = int("".join(str(bit) for bit in fixed1 + fixed2), 2)
     return rolling, fixed
 
 
