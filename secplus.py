@@ -198,8 +198,8 @@ def _manchester(code):
 def encode_v2_manchester(counter, fixed):
     preamble = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0]
     code = encode_v2(counter, fixed)
-    packet1 = preamble + [0] + code[0:40]
-    packet2 = preamble + [1] + code[0:40]
+    packet1 = preamble + [0] + code[:40]
+    packet2 = preamble + [1] + code[40:]
     blank = [0] * 33
 
     return _manchester(packet1) + blank + _manchester(packet2) + blank
