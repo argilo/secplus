@@ -140,43 +140,43 @@ def decode_v2(code):
     return rolling, fixed
 
 
-def encode(counter, fixed):
+def encode(rolling, fixed):
     """Encode a Security+ payload into 40 payload symbols
 
     Arguments:
-    counter -- the rolling code
+    rolling -- the rolling code
     fixed -- the fixed code
     """
 
-    counter = int("{0:032b}".format(counter & 0xfffffffe)[::-1], 2)
-    counter_base3 = [0] * 20
+    rolling = int("{0:032b}".format(rolling & 0xfffffffe)[::-1], 2)
+    rolling_base3 = [0] * 20
     fixed_base3 = [0] * 20
     for i in range(19, -1, -1):
-        counter_base3[i] = counter % 3
-        counter //= 3
+        rolling_base3[i] = rolling % 3
+        rolling //= 3
         fixed_base3[i] = fixed % 3
         fixed //= 3
     code = []
     for i in range(20):
         if i in [0, 10]:
             acc = 0
-        acc += counter_base3[i]
-        code.append(counter_base3[i])
+        acc += rolling_base3[i]
+        code.append(rolling_base3[i])
         acc += fixed_base3[i]
         code.append(acc % 3)
     return code
 
 
-def encode_ook(counter, fixed, fast=True):
+def encode_ook(rolling, fixed, fast=True):
     """Encode a Security+ payload and produce an OOK stream for transmission
 
     Arguments:
-    counter -- the rolling code
+    rolling -- the rolling code
     fixed -- the fixed code
     fast -- when True, shortens the time between packets
     """
 
-    code = encode(counter, fixed)
+    code = encode(rolling, fixed)
     blank = [-1] * (10 if fast else 29)
     code = [0] + code[0:20] + blank + [2] + code[20:40] + blank
     ook_bits = []
@@ -211,21 +211,21 @@ def _encode_v2_half(rolling, fixed):
     return code
 
 
-def encode_v2(counter, fixed):
+def encode_v2(rolling, fixed):
     """Encode a Security+ 2.0 payload into 80 payload bits
 
     Arguments:
-    counter -- the rolling code
+    rolling -- the rolling code
     fixed -- the fixed code
     """
 
-    counter = int("{0:028b}".format(counter)[::-1], 2)
-    counter_base3 = [0] * 18
+    rolling = int("{0:028b}".format(rolling)[::-1], 2)
+    rolling_base3 = [0] * 18
     for i in range(17, -1, -1):
-        counter_base3[i] = counter % 3
-        counter //= 3
-    rolling1 = counter_base3[14:18] + counter_base3[6:10] + counter_base3[1:2]
-    rolling2 = counter_base3[10:14] + counter_base3[2:6] + counter_base3[0:1]
+        rolling_base3[i] = rolling % 3
+        rolling //= 3
+    rolling1 = rolling_base3[14:18] + rolling_base3[6:10] + rolling_base3[1:2]
+    rolling2 = rolling_base3[10:14] + rolling_base3[2:6] + rolling_base3[0:1]
 
     fixed_bits = [int(bit) for bit in "{0:040b}".format(fixed)]
     fixed1 = fixed_bits[:20]
@@ -244,16 +244,16 @@ def _manchester(code):
     return output
 
 
-def encode_v2_manchester(counter, fixed):
+def encode_v2_manchester(rolling, fixed):
     """Encode a Security+ 2.0 payload and produce a Manchester stream for transmission
 
     Arguments:
-    counter -- the rolling code
+    rolling -- the rolling code
     fixed -- the fixed code
     """
 
     preamble = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0]
-    code = encode_v2(counter, fixed)
+    code = encode_v2(rolling, fixed)
     packet1 = preamble + [0] + code[:40]
     packet2 = preamble + [1] + code[40:]
     blank = [0] * 33
