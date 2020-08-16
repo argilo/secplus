@@ -121,6 +121,8 @@ def decode_v2(code):
 
     Arguments:
     code -- a list containing the 80 payload bits from a pair of packets
+
+    Raises a ValueError if the payload bits are invalid for any reason.
     """
     rolling1, fixed1 = _decode_v2_half(code[:40])
     rolling2, fixed2 = _decode_v2_half(code[40:])
