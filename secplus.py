@@ -148,7 +148,14 @@ def encode(rolling, fixed):
     Arguments:
     rolling -- the rolling code
     fixed -- the fixed code
+
+    Raises a ValueError if the rolling or fixed code is too large.
     """
+
+    if rolling >= 2**32:
+        raise ValueError("Rolling code must be less than 2^32")
+    if fixed >= 3**20:
+        raise ValueError("Fixed code must be less than 3^20")
 
     rolling = int("{0:032b}".format(rolling & 0xfffffffe)[::-1], 2)
     rolling_base3 = [0] * 20
@@ -219,7 +226,14 @@ def encode_v2(rolling, fixed):
     Arguments:
     rolling -- the rolling code
     fixed -- the fixed code
+
+    Raises a ValueError if the rolling or fixed code is too large.
     """
+
+    if rolling >= 3**18:
+        raise ValueError("Rolling code must be less than 3^18")
+    if fixed >= 2**40:
+        raise ValueError("Fixed code must be less than 2^40")
 
     rolling = int("{0:028b}".format(rolling)[::-1], 2)
     rolling_base3 = [0] * 18
