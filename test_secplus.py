@@ -8,7 +8,7 @@ import secplus
 class TestSecplus(unittest.TestCase):
 
     def test_encode_decode(self):
-        for _ in range(100000):
+        for _ in range(20000):
             rolling = random.randrange(2**32) & 0xfffffffe
             fixed = random.randrange(3**20)
 
@@ -32,7 +32,7 @@ class TestSecplus(unittest.TestCase):
             secplus.encode(rolling, fixed)
 
     def test_encode_v2_decode_v2(self):
-        for _ in range(100000):
+        for _ in range(20000):
             rolling = random.randrange(2**28)
             fixed = random.randrange(2**40)
 
