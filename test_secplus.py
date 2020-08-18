@@ -5,7 +5,7 @@ import unittest
 import secplus
 
 
-class TestSum(unittest.TestCase):
+class TestSecplus(unittest.TestCase):
 
     def test_encode_decode(self):
         for _ in range(100000):
