@@ -39,14 +39,14 @@ class TestSecplus(unittest.TestCase):
         rolling = 2**32
         fixed = 3**20 - 1
 
-        with self.assertRaisesRegex(ValueError, "Rolling code must be less than 2\^32"):
+        with self.assertRaisesRegex(ValueError, r"Rolling code must be less than 2\^32"):
             secplus.encode(rolling, fixed)
 
     def test_encode_fixed_limit(self):
         rolling = 2**32 - 1
         fixed = 3**20
 
-        with self.assertRaisesRegex(ValueError, "Fixed code must be less than 3\^20"):
+        with self.assertRaisesRegex(ValueError, r"Fixed code must be less than 3\^20"):
             secplus.encode(rolling, fixed)
 
     def test_encode_v2_decode_v2(self):
@@ -63,15 +63,28 @@ class TestSecplus(unittest.TestCase):
         rolling = 2**28
         fixed = 2**40 - 1
 
-        with self.assertRaisesRegex(ValueError, "Rolling code must be less than 2\^28"):
+        with self.assertRaisesRegex(ValueError, r"Rolling code must be less than 2\^28"):
             secplus.encode_v2(rolling, fixed)
 
     def test_encode_v2_fixed_limit(self):
         rolling = 2**28 - 1
         fixed = 2**40
 
-        with self.assertRaisesRegex(ValueError, "Fixed code must be less than 2\^40"):
+        with self.assertRaisesRegex(ValueError, r"Fixed code must be less than 2\^40"):
             secplus.encode_v2(rolling, fixed)
+
+    def test_decode_v2_zero_bits(self):
+        codes = """
+        10000000001101101101101101101101101101100000000000110110110110110110110110110110
+        01000000001101101101101101101101101101100000000000110110110110110110110110110110
+        00000000001101101101101101101101101101101000000000110110110110110110110110110110
+        00000000001101101101101101101101101101100100000000110110110110110110110110110110
+        """.split()
+
+        for code in codes:
+            code = [int(bit) for bit in code]
+            with self.assertRaisesRegex(ValueError, "First two bits of packet were not zero"):
+                secplus.decode_v2(code)
 
 
 if __name__ == '__main__':
