@@ -230,8 +230,8 @@ def encode_v2(rolling, fixed):
     Raises a ValueError if the rolling or fixed code is too large.
     """
 
-    if rolling >= 3**18:
-        raise ValueError("Rolling code must be less than 3^18")
+    if rolling >= 2**28:
+        raise ValueError("Rolling code must be less than 2^28")
     if fixed >= 2**40:
         raise ValueError("Fixed code must be less than 2^40")
 
