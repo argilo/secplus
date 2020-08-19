@@ -24,6 +24,29 @@ import secplus
 
 
 class TestSecplus(unittest.TestCase):
+    v1_codes = """
+    0010000211122102222101112211012101001110
+    0021121200000001021001111102210202010102
+    1122021222211211102201001020111022200012
+    0021202121010102222112202102211011111200
+    0002020110221012220212200211121101111221
+    0010111102022102222112122001202000100011
+    1111012200000020120212012222211000020221
+    1100111121120211022112120110112101001112
+    1102221122112110210210220210211212100020
+    1120002010000002212110112011002212022110
+    0202022201120212212102102202200002022121
+    0112102010221010001202101101001100001110
+    """.split()
+
+    v1_rolling_list = [
+        2320616984, 2320616988, 2320616990, 2320616994,
+        3869428096, 3869428100, 3869428102, 3869428106,
+        2615434906, 2615434910, 2615434912, 2615434916,
+    ]
+
+    v1_fixed_list = [876029923]*4 + [876029922]*4 + [595667170, 72906373, 2397429307, 1235167840]
+
     v2_codes = """
     00010001000010111110001111110110111011100010010110001110011110010011011011011011
     00010000101011110011000010011011010110000010001000000111110101101100100110100110
@@ -66,6 +89,21 @@ class TestSecplus(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, r"Fixed code must be less than 3\^20"):
             secplus.encode(rolling, fixed)
+
+    def test_encode(self):
+        for code, rolling, fixed in zip(self.v1_codes, self.v1_rolling_list, self.v1_fixed_list):
+            code = [int(bit) for bit in code]
+            code_out = secplus.encode(rolling, fixed)
+
+            self.assertEqual(code, code_out)
+
+    def test_decode(self):
+        for code, rolling, fixed in zip(self.v1_codes, self.v1_rolling_list, self.v1_fixed_list):
+            code = [int(bit) for bit in code]
+            rolling_out, fixed_out = secplus.decode(code)
+
+            self.assertEqual(rolling, rolling_out)
+            self.assertEqual(fixed, fixed_out)
 
     def test_encode_v2_decode_v2(self):
         for _ in range(20000):
