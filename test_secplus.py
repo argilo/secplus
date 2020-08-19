@@ -44,7 +44,6 @@ class TestSecplus(unittest.TestCase):
         3869428096, 3869428100, 3869428102, 3869428106,
         2615434906, 2615434910, 2615434912, 2615434916,
     ]
-
     v1_fixed_list = [876029923]*4 + [876029922]*4 + [595667170, 72906373, 2397429307, 1235167840]
 
     v2_codes = """
@@ -65,6 +64,9 @@ class TestSecplus(unittest.TestCase):
     00101001011111111000111011001100111010000010100101111001101001000101101100101101
     00101001001001011110001111101000011110100010010110001010011110110011011111011111
     """.split()
+
+    v2_rolling_list = range(240124710, 240124726)
+    v2_fixed_list = [0x1074c58200]*4 + [0x0e74c58200]*4 + [0x0f74c58200]*4 + [0x1174c58200]*4
 
     def test_encode_decode(self):
         for _ in range(20000):
@@ -130,20 +132,14 @@ class TestSecplus(unittest.TestCase):
             secplus.encode_v2(rolling, fixed)
 
     def test_encode_v2(self):
-        rolling_list = range(240124710, 240124726)
-        fixed_list = [0x1074c58200]*4 + [0x0e74c58200]*4 + [0x0f74c58200]*4 + [0x1174c58200]*4
-
-        for code, rolling, fixed in zip(self.v2_codes, rolling_list, fixed_list):
+        for code, rolling, fixed in zip(self.v2_codes, self.v2_rolling_list, self.v2_fixed_list):
             code = [int(bit) for bit in code]
             code_out = secplus.encode_v2(rolling, fixed)
 
             self.assertEqual(code, code_out)
 
     def test_decode_v2(self):
-        rolling_list = range(240124710, 240124726)
-        fixed_list = [0x1074c58200]*4 + [0x0e74c58200]*4 + [0x0f74c58200]*4 + [0x1174c58200]*4
-
-        for code, rolling, fixed in zip(self.v2_codes, rolling_list, fixed_list):
+        for code, rolling, fixed in zip(self.v2_codes, self.v2_rolling_list, self.v2_fixed_list):
             code = [int(bit) for bit in code]
             rolling_out, fixed_out = secplus.decode_v2(code)
 
