@@ -91,6 +91,16 @@ class TestSecplus(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, r"Fixed code must be less than 2\^40"):
             secplus.encode_v2(rolling, fixed)
 
+    def test_encode_v2(self):
+        rolling_list = range(240124710, 240124726)
+        fixed_list = [0x1074c58200]*4 + [0x0e74c58200]*4 + [0x0f74c58200]*4 + [0x1174c58200]*4
+
+        for code, rolling, fixed in zip(self.v2_codes, rolling_list, fixed_list):
+            code = [int(bit) for bit in code]
+            code_out = secplus.encode_v2(rolling, fixed)
+
+            self.assertEqual(code, code_out)
+
     def test_decode_v2(self):
         rolling_list = range(240124710, 240124726)
         fixed_list = [0x1074c58200]*4 + [0x0e74c58200]*4 + [0x0f74c58200]*4 + [0x1174c58200]*4
