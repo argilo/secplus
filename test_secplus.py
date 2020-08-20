@@ -99,6 +99,16 @@ class TestSecplus(unittest.TestCase):
 
             self.assertEqual(code, code_out)
 
+    def test_encode_ook(self):
+        rolling, fixed = self.v1_rolling_list[0], self.v1_fixed_list[0]
+        ook_out = secplus.encode_ook(rolling, fixed)
+        ook = "000100010001001100010001000100010111001100110011011101110011000101110111011101110011" \
+            + "0000000000000000000000000000000000000000" \
+            + "011100010011001100110111011100110011000100110111001100010011000100010011001100110001" \
+            + "0000000000000000000000000000000000000000"
+        ook = [int(bit) for bit in ook]
+        self.assertEqual(ook, ook_out)
+
     def test_decode(self):
         for code, rolling, fixed in zip(self.v1_codes, self.v1_rolling_list, self.v1_fixed_list):
             code = [int(bit) for bit in code]
@@ -138,6 +148,18 @@ class TestSecplus(unittest.TestCase):
 
             self.assertEqual(code, code_out)
 
+    def test_encode_v2_manchester(self):
+        rolling, fixed = self.v2_rolling_list[0], self.v2_fixed_list[0]
+        manchester_out = secplus.encode_v2_manchester(rolling, fixed)
+        manchester = "10101010101010101010101010101010010101011010" \
+                   + "10101001101010011010101001100101010101101010010101010101100101100101011001010110" \
+                   + "000000000000000000000000000000000" \
+                   + "10101010101010101010101010101010010101011001" \
+                   + "10100110100110010110101001010110100101010110100110100101100101100101100101100101" \
+                   + "000000000000000000000000000000000"
+        manchester = [int(bit) for bit in manchester]
+        self.assertEqual(manchester, manchester_out)
+
     def test_decode_v2(self):
         for code, rolling, fixed in zip(self.v2_codes, self.v2_rolling_list, self.v2_fixed_list):
             code = [int(bit) for bit in code]
@@ -153,6 +175,17 @@ class TestSecplus(unittest.TestCase):
             broken_code = code.copy()
             broken_code[bit] = 1
             with self.assertRaisesRegex(ValueError, "First two bits of packet were not zero"):
+                secplus.decode_v2(broken_code)
+
+
+    def test_decode_v2_invalid_ternary(self):
+        code = [int(bit) for bit in self.v2_codes[0]]
+
+        for bit in [2, 4, 6, 8]:
+            broken_code = code.copy()
+            broken_code[bit] = 1
+            broken_code[bit+1] = 1
+            with self.assertRaisesRegex(ValueError, "Illegal value for ternary bit"):
                 secplus.decode_v2(broken_code)
 
 
