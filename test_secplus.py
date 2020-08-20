@@ -46,6 +46,21 @@ class TestSecplus(unittest.TestCase):
     ]
     v1_fixed_list = [876029923]*4 + [876029922]*4 + [595667170, 72906373, 2397429307, 1235167840]
 
+    v1_pretty = """
+    Security+:  rolling=2320616984  fixed=876029923  (id1=2 id0=0 switch=1 remote_id=32445552 button=left)
+    Security+:  rolling=2320616988  fixed=876029923  (id1=2 id0=0 switch=1 remote_id=32445552 button=left)
+    Security+:  rolling=2320616990  fixed=876029923  (id1=2 id0=0 switch=1 remote_id=32445552 button=left)
+    Security+:  rolling=2320616994  fixed=876029923  (id1=2 id0=0 switch=1 remote_id=32445552 button=left)
+    Security+:  rolling=3869428096  fixed=876029922  (id1=2 id0=0 switch=0 remote_id=32445552 button=middle)
+    Security+:  rolling=3869428100  fixed=876029922  (id1=2 id0=0 switch=0 remote_id=32445552 button=middle)
+    Security+:  rolling=3869428102  fixed=876029922  (id1=2 id0=0 switch=0 remote_id=32445552 button=middle)
+    Security+:  rolling=3869428106  fixed=876029922  (id1=2 id0=0 switch=0 remote_id=32445552 button=middle)
+    Security+:  rolling=2615434906  fixed=595667170  (id1=0 id0=0 switch=1 pad_id=1478 pin=enter)
+    Security+:  rolling=2615434910  fixed=72906373  (id1=0 id0=0 switch=1 pad_id=1478 pin=1234)
+    Security+:  rolling=2615434912  fixed=2397429307  (id1=0 id0=0 switch=1 pad_id=1478 pin=1234*)
+    Security+:  rolling=2615434916  fixed=1235167840  (id1=0 id0=0 switch=1 pad_id=1478 pin=1234#)
+    """.strip().split("\n")
+
     v2_codes = """
     00010001000010111110001111110110111011100010010110001110011110010011011011011011
     00010000101011110011000010011011010110000010001000000111110101101100100110100110
@@ -129,6 +144,12 @@ class TestSecplus(unittest.TestCase):
             self.assertEqual(rolling, rolling_out)
             self.assertEqual(fixed, fixed_out)
 
+    def test_pretty(self):
+        for pretty, rolling, fixed in zip(self.v1_pretty, self.v1_rolling_list, self.v1_fixed_list):
+            pretty = pretty.lstrip()
+            pretty_out = secplus.pretty(rolling, fixed)
+            self.assertEqual(pretty, pretty_out)
+
     def test_encode_v2_decode_v2(self):
         for _ in range(20000):
             rolling = random.randrange(2**28)
@@ -198,6 +219,13 @@ class TestSecplus(unittest.TestCase):
             broken_code[bit+1] = 1
             with self.assertRaisesRegex(ValueError, "Illegal value for ternary bit"):
                 secplus.decode_v2(broken_code)
+
+    def test_pretty_v2(self):
+        for rolling, fixed in zip(self.v2_rolling_list, self.v2_fixed_list):
+            button = fixed >> 32
+            pretty = f"Security+ 2.0:  rolling={rolling}  fixed={fixed}  (button={button} remote_id=1959100928)"
+            pretty_out = secplus.pretty_v2(rolling, fixed)
+            self.assertEqual(pretty, pretty_out)
 
 
 if __name__ == '__main__':
