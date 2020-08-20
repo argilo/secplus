@@ -153,6 +153,13 @@ class TestSecplus(unittest.TestCase):
             self.assertEqual(rolling, rolling_out)
             self.assertEqual(fixed, fixed_out)
 
+    def test_decode_robustness(self):
+        for _ in range(20000):
+            random_code = [random.randrange(3) for _ in range(40)]
+            rolling, fixed = secplus.decode(random_code)
+            self.assertLess(rolling, 2**32)
+            self.assertLess(fixed, 3**20)
+
     def test_pretty(self):
         for pretty, rolling, fixed in zip(self.v1_pretty, self.v1_rolling_list, self.v1_fixed_list):
             pretty = pretty.lstrip()
@@ -228,6 +235,16 @@ class TestSecplus(unittest.TestCase):
             broken_code[bit+1] = 1
             with self.assertRaisesRegex(ValueError, "Illegal value for ternary bit"):
                 secplus.decode_v2(broken_code)
+
+    def test_decode_v2_robustness(self):
+        for _ in range(20000):
+            random_code = [random.randrange(2) for _ in range(80)]
+            try:
+                rolling, fixed = secplus.decode_v2(random_code)
+                self.assertLess(rolling, 2**28)
+                self.assertLess(fixed, 2**40)
+            except ValueError:
+                pass
 
     def test_pretty_v2(self):
         for rolling, fixed in zip(self.v2_rolling_list, self.v2_fixed_list):
