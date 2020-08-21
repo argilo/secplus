@@ -229,12 +229,34 @@ class TestSecplus(unittest.TestCase):
     def test_decode_v2_invalid_ternary(self):
         code = [int(bit) for bit in self.v2_codes[0]]
 
-        for bit in [2, 4, 6, 8]:
+        for bit in [2, 4, 6, 8, 42, 44, 46, 48]:
             broken_code = code.copy()
             broken_code[bit] = 1
             broken_code[bit+1] = 1
             with self.assertRaisesRegex(ValueError, "Illegal value for ternary bit"):
                 secplus.decode_v2(broken_code)
+
+    def test_decode_v2_invalid_ternary_2(self):
+        code = "00101010011101111000010100011000010011100010101001110100011110110010110001000101"
+        code = [int(bit) for bit in code]
+
+        for bit in [12, 18, 24, 30, 36, 52, 58, 64, 70, 76]:
+            broken_code = code.copy()
+            broken_code[bit] = 1
+            broken_code[bit+3] = 1
+            with self.assertRaisesRegex(ValueError, "Illegal value for ternary bit"):
+                secplus.decode_v2(broken_code)
+
+    def test_decode_v2_invalid_rolling_code(self):
+        code = "00101010011101111000010100011000010011100010101001110100011110110010110001000101"
+        code = [int(bit) for bit in code]
+
+        broken_code = code.copy()
+        for bit in [12, 18, 24, 30, 36, 52, 58, 64, 70, 76]:
+            broken_code[bit] = 1
+            broken_code[bit+3] = 0
+        with self.assertRaisesRegex(ValueError, "Rolling code was not in expected range"):
+            secplus.decode_v2(broken_code)
 
     def test_decode_v2_robustness(self):
         for _ in range(20000):
