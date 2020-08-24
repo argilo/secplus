@@ -166,6 +166,15 @@ class TestSecplus(unittest.TestCase):
             pretty_out = secplus.pretty(rolling, fixed)
             self.assertEqual(pretty, pretty_out)
 
+    def test_pretty_invalid_pin(self):
+        for pin in range(11030, 3**9):
+            rolling = random.randrange(2**32) & 0xfffffffe
+            pad_id = random.randrange(3**7)
+            fixed = pin * (3**10) + pad_id * (3**3)
+            pretty = f"Security+:  rolling={rolling}  fixed={fixed}  (id1=0 id0=0 switch=0 pad_id={pad_id})"
+            pretty_out = secplus.pretty(rolling, fixed)
+            self.assertEqual(pretty, pretty_out)
+
     def test_encode_v2_decode_v2(self):
         for _ in range(20000):
             rolling = random.randrange(2**28)
