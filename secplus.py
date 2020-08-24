@@ -305,11 +305,11 @@ def _fixed_pretty(fixed):
     else:
         remote_id = (fixed // 3**3)
         result += " remote_id={0}".format(remote_id)
-        if switch_id == 1:
-            button = "left"
-        elif switch_id == 0:
+        if switch_id == 0:
             button = "middle"
-        elif switch_id == 2:
+        elif switch_id == 1:
+            button = "left"
+        else:
             button = "right"
         result += " button={0}".format(button)
 
