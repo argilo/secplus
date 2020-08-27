@@ -80,7 +80,6 @@ def decode(code):
         acc += digit
 
     rolling = int("{0:032b}".format(rolling)[::-1], 2)
-    fixed = int("{0:032b}".format(fixed), 2)
     return rolling, fixed
 
 
