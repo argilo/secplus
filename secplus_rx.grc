@@ -1,6 +1,7 @@
 options:
   parameters:
     author: ''
+    catch_exceptions: 'True'
     category: '[GRC Hier Blocks]'
     cmake_opt: ''
     comment: ''
@@ -22,7 +23,6 @@ options:
     sizing_mode: fixed
     thread_safe_setters: ''
     title: ''
-    window_size: ''
   states:
     bus_sink: false
     bus_source: false
@@ -135,6 +135,7 @@ blocks:
     maxoutbuf: '0'
     minoutbuf: '0'
     phase_inc: 2 * math.pi * -300e3 / samp_rate
+    tag_inc_update: 'False'
   states:
     bus_sink: false
     bus_source: false

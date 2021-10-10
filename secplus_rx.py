@@ -6,7 +6,7 @@
 #
 # GNU Radio Python Flow Graph
 # Title: Secplus Rx
-# GNU Radio version: 3.8.1.0
+# GNU Radio version: 3.9.3.0
 
 from distutils.version import StrictVersion
 
@@ -28,6 +28,7 @@ import sip
 from gnuradio import blocks
 from gnuradio import filter
 from gnuradio import gr
+from gnuradio.fft import window
 import sys
 import signal
 from argparse import ArgumentParser
@@ -36,15 +37,17 @@ from gnuradio import eng_notation
 import math
 import osmosdr
 import time
-import secplus_decode
-import secplus_v2_decode
+import secplus_rx_secplus_decode as secplus_decode  # embedded python block
+import secplus_rx_secplus_v2_decode as secplus_v2_decode  # embedded python block
+
+
 
 from gnuradio import qtgui
 
 class secplus_rx(gr.top_block, Qt.QWidget):
 
     def __init__(self):
-        gr.top_block.__init__(self, "Secplus Rx")
+        gr.top_block.__init__(self, "Secplus Rx", catch_exceptions=True)
         Qt.QWidget.__init__(self)
         self.setWindowTitle("Secplus Rx")
         qtgui.util.check_set_qss()
@@ -87,9 +90,9 @@ class secplus_rx(gr.top_block, Qt.QWidget):
         # Blocks
         ##################################################
         # Create the options list
-        self._freq_options = (310150000, 315150000, 390150000, )
+        self._freq_options = [310150000, 315150000, 390150000]
         # Create the labels list
-        self._freq_labels = ('310 MHz', '315 MHz', '390 MHz', )
+        self._freq_labels = ['310 MHz', '315 MHz', '390 MHz']
         # Create the combo box
         # Create the radio buttons
         self._freq_group_box = Qt.QGroupBox('Frequency' + ": ")
@@ -110,24 +113,25 @@ class secplus_rx(gr.top_block, Qt.QWidget):
         self._freq_callback(self.freq)
         self._freq_button_group.buttonClicked[int].connect(
             lambda i: self.set_freq(self._freq_options[i]))
-        self.top_grid_layout.addWidget(self._freq_group_box)
+        self.top_layout.addWidget(self._freq_group_box)
         self.secplus_v2_decode = secplus_v2_decode.blk(samp_rate=samp_rate // decim1 // decim2, threshold=threshold)
         self.secplus_decode = secplus_decode.blk(samp_rate=samp_rate // decim1 // decim2, threshold=threshold)
         self.rational_resampler_xxx_1 = filter.rational_resampler_fff(
                 interpolation=1,
                 decimation=decim2,
                 taps=[1.0/decim2]*decim2,
-                fractional_bw=None)
+                fractional_bw=0)
         self.rational_resampler_xxx_0 = filter.rational_resampler_ccc(
                 interpolation=1,
                 decimation=decim1,
-                taps=None,
-                fractional_bw=None)
+                taps=[],
+                fractional_bw=0)
         self.qtgui_time_sink_x_0 = qtgui.time_sink_f(
             100000 // decim1 // decim2, #size
             samp_rate // decim1 // decim2, #samp_rate
             "", #name
-            1 #number of inputs
+            1, #number of inputs
+            None # parent
         )
         self.qtgui_time_sink_x_0.set_update_time(0.10)
         self.qtgui_time_sink_x_0.set_y_axis(0, 2)
@@ -168,8 +172,8 @@ class secplus_rx(gr.top_block, Qt.QWidget):
             self.qtgui_time_sink_x_0.set_line_marker(i, markers[i])
             self.qtgui_time_sink_x_0.set_line_alpha(i, alphas[i])
 
-        self._qtgui_time_sink_x_0_win = sip.wrapinstance(self.qtgui_time_sink_x_0.pyqwidget(), Qt.QWidget)
-        self.top_grid_layout.addWidget(self._qtgui_time_sink_x_0_win)
+        self._qtgui_time_sink_x_0_win = sip.wrapinstance(self.qtgui_time_sink_x_0.qwidget(), Qt.QWidget)
+        self.top_layout.addWidget(self._qtgui_time_sink_x_0_win)
         self.osmosdr_source_0 = osmosdr.source(
             args="numchan=" + str(1) + " " + ''
         )
@@ -177,12 +181,15 @@ class secplus_rx(gr.top_block, Qt.QWidget):
         self.osmosdr_source_0.set_sample_rate(samp_rate)
         self.osmosdr_source_0.set_center_freq(freq - 300e3, 0)
         self.osmosdr_source_0.set_freq_corr(0, 0)
+        self.osmosdr_source_0.set_dc_offset_mode(0, 0)
+        self.osmosdr_source_0.set_iq_balance_mode(0, 0)
+        self.osmosdr_source_0.set_gain_mode(False, 0)
         self.osmosdr_source_0.set_gain(30, 0)
         self.osmosdr_source_0.set_if_gain(32, 0)
         self.osmosdr_source_0.set_bb_gain(32, 0)
         self.osmosdr_source_0.set_antenna('', 0)
         self.osmosdr_source_0.set_bandwidth(1e6, 0)
-        self.blocks_rotator_cc_0 = blocks.rotator_cc(2 * math.pi * -300e3 / samp_rate)
+        self.blocks_rotator_cc_0 = blocks.rotator_cc(2 * math.pi * -300e3 / samp_rate, False)
         self.blocks_complex_to_mag_0 = blocks.complex_to_mag(1)
 
 
@@ -202,6 +209,9 @@ class secplus_rx(gr.top_block, Qt.QWidget):
     def closeEvent(self, event):
         self.settings = Qt.QSettings("GNU Radio", "secplus_rx")
         self.settings.setValue("geometry", self.saveGeometry())
+        self.stop()
+        self.wait()
+
         event.accept()
 
     def get_threshold(self):
@@ -254,7 +264,6 @@ class secplus_rx(gr.top_block, Qt.QWidget):
 
 
 
-
 def main(top_block_cls=secplus_rx, options=None):
 
     if StrictVersion("4.5.0") <= StrictVersion(Qt.qVersion()) < StrictVersion("5.0.0"):
@@ -269,6 +278,9 @@ def main(top_block_cls=secplus_rx, options=None):
     tb.show()
 
     def sig_handler(sig=None, frame=None):
+        tb.stop()
+        tb.wait()
+
         Qt.QApplication.quit()
 
     signal.signal(signal.SIGINT, sig_handler)
@@ -278,11 +290,6 @@ def main(top_block_cls=secplus_rx, options=None):
     timer.start(500)
     timer.timeout.connect(lambda: None)
 
-    def quitting():
-        tb.stop()
-        tb.wait()
-
-    qapp.aboutToQuit.connect(quitting)
     qapp.exec_()
 
 if __name__ == '__main__':

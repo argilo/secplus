@@ -6,13 +6,14 @@
 #
 # GNU Radio Python Flow Graph
 # Title: Secplus Tx
-# GNU Radio version: 3.8.1.0
+# GNU Radio version: 3.9.3.0
 
 from gnuradio import analog
 from gnuradio import blocks
 from gnuradio import filter
 from gnuradio import gr
 from gnuradio.filter import firdes
+from gnuradio.fft import window
 import sys
 import signal
 from argparse import ArgumentParser
@@ -23,10 +24,12 @@ import time
 import secplus
 
 
+
+
 class secplus_tx(gr.top_block):
 
     def __init__(self, fixed=1234567890, freq=315150000, rolling=1234567890):
-        gr.top_block.__init__(self, "Secplus Tx")
+        gr.top_block.__init__(self, "Secplus Tx", catch_exceptions=True)
 
         ##################################################
         # Parameters
@@ -109,7 +112,6 @@ class secplus_tx(gr.top_block):
         self.samp_rate = samp_rate
         self.analog_sig_source_x_0.set_sampling_freq(self.samp_rate)
         self.osmosdr_sink_0.set_sample_rate(self.samp_rate)
-
 
 
 
