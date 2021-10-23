@@ -140,7 +140,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [416, 180.0]
+    coordinate: [416, 168.0]
     rotation: 0
     state: enabled
 - name: import_0
@@ -510,7 +510,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [136, 92]
+    coordinate: [136, 76.0]
     rotation: 0
     state: enabled
 - name: qtgui_time_sink_x_0
