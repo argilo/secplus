@@ -17,7 +17,6 @@
 # along with secplus.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
 import numpy as np
 from gnuradio import gr
 import secplus
@@ -86,7 +85,7 @@ class blk(gr.sync_block):
                 baseband.append(0)
             else:
                 return
-    
+
         if baseband[21] == 0:
             self.pair = baseband[22:]
         elif baseband[21] == 1 and len(self.pair) == 40:

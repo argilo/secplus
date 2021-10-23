@@ -17,7 +17,6 @@
 # along with secplus.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import print_function
 import numpy as np
 from gnuradio import gr
 import secplus

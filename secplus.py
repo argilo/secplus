@@ -23,8 +23,6 @@ transmission, and pretty-prints the codes. It can be used to build stand-alone
 applications.
 """
 
-from __future__ import division
-
 _OOK = {
     -1: [0, 0, 0, 0],
     0: [0, 0, 0, 1],
