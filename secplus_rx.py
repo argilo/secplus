@@ -37,8 +37,8 @@ from gnuradio import eng_notation
 import math
 import osmosdr
 import time
-import secplus_rx_secplus_decode as secplus_decode  # embedded python block
-import secplus_rx_secplus_v2_decode as secplus_v2_decode  # embedded python block
+import secplus_decode as secplus_decode  # embedded python block
+import secplus_v2_decode as secplus_v2_decode  # embedded python block
 
 
 
