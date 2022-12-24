@@ -265,10 +265,10 @@ def encode_v2_manchester(rolling, fixed):
     fixed -- the fixed code
     """
 
-    preamble = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0]
+    preamble = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1]
     code = encode_v2(rolling, fixed)
-    packet1 = preamble + [0] + code[:40]
-    packet2 = preamble + [1] + code[40:]
+    packet1 = preamble + [0, 0] + code[:40]
+    packet2 = preamble + [0, 1] + code[40:]
     blank = [0] * 33
 
     return _manchester(packet1) + blank + _manchester(packet2) + blank
