@@ -284,6 +284,18 @@ class TestSecplus(unittest.TestCase):
             pretty_out = secplus.pretty_v2(rolling, fixed)
             self.assertEqual(pretty, pretty_out)
 
+    def test_encode_wireline_decode_wireline(self):
+        for _ in range(20000):
+            rolling = random.randrange(2**28)
+            fixed = random.randrange(2**40)
+            data = random.randrange(2**32)
+
+            rolling_out, fixed_out, data_out = secplus.decode_wireline(secplus.encode_wireline(rolling, fixed, data))
+
+            self.assertEqual(rolling, rolling_out)
+            self.assertEqual(fixed, fixed_out)
+            self.assertEqual(data, data_out)
+
 
 if __name__ == '__main__':
     unittest.main()
