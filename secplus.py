@@ -81,17 +81,14 @@ def decode(code):
     return rolling, fixed
 
 
-def _decode_v2_half(code):
-    if code[:2] != [0, 0]:
-        raise ValueError("First two bits of packet were not zero")
-
+def _v2_unscramble(indicator, payload):
     try:
-        order = _ORDER[(code[2] << 3) | (code[3] << 2) | (code[4] << 1) | code[5]]
-        invert = _INVERT[(code[6] << 3) | (code[7] << 2) | (code[8] << 1) | code[9]]
+        order = _ORDER[(indicator[0] << 3) | (indicator[1] << 2) | (indicator[2] << 1) | indicator[3]]
+        invert = _INVERT[(indicator[4] << 3) | (indicator[5] << 2) | (indicator[6] << 1) | indicator[7]]
     except KeyError:
         raise ValueError("Illegal value for ternary bit")
 
-    parts_permuted = [code[10::3], code[11::3], code[12::3]]
+    parts_permuted = [payload[0::3], payload[1::3], payload[2::3]]
     for i in range(3):
         if invert[i]:
             parts_permuted[i] = [bit ^ 1 for bit in parts_permuted[i]]
@@ -100,10 +97,34 @@ def _decode_v2_half(code):
     for i in range(3):
         parts[order[i]] = parts_permuted[i]
 
+    return parts
+
+
+def _decode_v2_rolling(rolling1, rolling2):
+    rolling_digits = rolling2[8:] + rolling1[8:]
+    rolling_digits += rolling2[4:8] + rolling1[4:8]
+    rolling_digits += rolling2[:4] + rolling1[:4]
+
+    rolling = 0
+    for digit in rolling_digits:
+        rolling = (rolling * 3) + digit
+    if rolling >= 2**28:
+        raise ValueError("Rolling code was not in expected range")
+    return int("{0:028b}".format(rolling)[::-1], 2)
+
+
+def _decode_v2_half(code):
+    if code[:2] != [0, 0]:
+        raise ValueError("First two bits of packet were not zero")
+
+    indicator = code[2:10]
+    payload = code[10:]
+    parts = _v2_unscramble(indicator, payload)
+
     rolling = []
-    for i in range(2, 10, 2):
-        rolling.append((code[i] << 1) | code[i+1])
-    for i in range(0, 10, 2):
+    for i in range(0, len(indicator), 2):
+        rolling.append((indicator[i] << 1) | indicator[i+1])
+    for i in range(0, len(parts[2]), 2):
         rolling.append((parts[2][i] << 1) | parts[2][i+1])
     if 3 in rolling:
         raise ValueError("Illegal value for ternary bit")
@@ -124,17 +145,7 @@ def decode_v2(code):
     rolling1, fixed1 = _decode_v2_half(code[:40])
     rolling2, fixed2 = _decode_v2_half(code[40:])
 
-    rolling_digits = rolling2[8:] + rolling1[8:]
-    rolling_digits += rolling2[4:8] + rolling1[4:8]
-    rolling_digits += rolling2[:4] + rolling1[:4]
-
-    rolling = 0
-    for digit in rolling_digits:
-        rolling = (rolling * 3) + digit
-    if rolling >= 2**28:
-        raise ValueError("Rolling code was not in expected range")
-    rolling = int("{0:028b}".format(rolling)[::-1], 2)
-
+    rolling = _decode_v2_rolling(rolling1, rolling2)
     fixed = int("".join(str(bit) for bit in fixed1 + fixed2), 2)
     return rolling, fixed
 
