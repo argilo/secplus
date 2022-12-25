@@ -323,6 +323,60 @@ def encode_v2(rolling, fixed):
     return _encode_v2_half(rolling1, fixed1) + _encode_v2_half(rolling2, fixed2)
 
 
+def _encode_wireline_half(rolling, fixed, data):
+    indicator = []
+    for digit in rolling[:4]:
+        indicator.append(digit >> 1)
+        indicator.append(digit & 1)
+
+    parts = [fixed[:10] + data[:8], fixed[10:] + data[8:], []]
+    for digit in rolling[4:] + rolling[:4]:
+        parts[2].append(digit >> 1)
+        parts[2].append(digit & 1)
+
+    payload = _v2_scramble(indicator, parts)
+
+    return indicator + [0, 0] + payload
+
+
+def encode_wireline(rolling, fixed, data):
+    """Encode a Security+ 2.0 wireline payload into 19 bytes
+
+    Arguments:
+    rolling -- the rolling code
+    fixed -- the fixed code (40 bits)
+    data -- the data (32 bits)
+
+    Raises a ValueError if the rolling code, fixed code, or data is too large.
+    """
+
+    if rolling >= 2**28:
+        raise ValueError("Rolling code must be less than 2^28")
+    if fixed >= 2**40:
+        raise ValueError("Fixed code must be less than 2^40")
+    if data >= 2**32:
+        raise ValueError("Data must be less than 2^32")
+
+    rolling1, rolling2 = _encode_v2_rolling(rolling)
+
+    fixed_bits = [int(bit) for bit in "{0:040b}".format(fixed)]
+    fixed1 = fixed_bits[:20]
+    fixed2 = fixed_bits[20:]
+
+    data_bits = [int(bit) for bit in "{0:032b}".format(data)]
+    data1 = data_bits[:16]
+    data2 = data_bits[16:]
+
+    payload_bits = _encode_wireline_half(rolling1, fixed1, data1) + _encode_wireline_half(rolling2, fixed2, data2)
+    packet = [0x55, 0x01, 0x00]
+    for n in range(len(payload_bits) // 8):
+        byte = 0
+        for bit in range(8):
+            byte |= payload_bits[n * 8 + bit] << (7 - bit)
+        packet.append(byte)
+    return bytes(packet)
+
+
 def _manchester(code):
     output = []
     for bit in code:
