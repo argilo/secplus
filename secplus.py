@@ -150,6 +150,61 @@ def decode_v2(code):
     return rolling, fixed
 
 
+def _decode_wireline_half(code):
+    if code[8:10] != [0, 0]:
+        raise ValueError("bits 8 and 9 of packet were not zero")
+
+    indicator = code[:8]
+    payload = code[10:]
+    parts = _v2_unscramble(indicator, payload)
+
+    rolling = []
+    for i in range(0, len(indicator), 2):
+        rolling.append((indicator[i] << 1) | indicator[i+1])
+    for i in range(0, len(parts[2]), 2):
+        rolling.append((parts[2][i] << 1) | parts[2][i+1])
+    if 3 in rolling:
+        raise ValueError("Illegal value for ternary bit")
+
+    if rolling[:4] != rolling[-4:]:
+        raise ValueError("Last four ternary bits do not repeat first four")
+
+    fixed = parts[0][:10] + parts[1][:10]
+    data = parts[0][10:] + parts[1][10:]
+
+    return rolling[:-4], fixed, data
+
+
+def decode_wireline(code):
+    """Decode a Security+ 2.0 wireline transmission and return the rolling code,
+    fixed code, and data.
+
+    Arguments:
+    code -- a bytes object with the 19 bytes of a serial packet
+
+    Raises a ValueError if the payload bytes are invalid for any reason.
+    """
+    if not isinstance(code, bytes):
+        raise ValueError("Input must be bytes")
+    if len(code) != 19:
+        raise ValueError("Input must be 19 bytes long")
+    if code[:3] != bytes([0x55, 0x01, 0x00]):
+        raise ValueError("First three bytes must be 0x55, 0x01, 0x00")
+
+    code_bits = []
+    for b in code[3:]:
+        for bit in range(7, -1, -1):
+            code_bits.append((b >> bit) & 1)
+
+    rolling1, fixed1, data1 = _decode_wireline_half(code_bits[:64])
+    rolling2, fixed2, data2 = _decode_wireline_half(code_bits[64:])
+
+    rolling = _decode_v2_rolling(rolling1, rolling2)
+    fixed = int("".join(str(bit) for bit in fixed1 + fixed2), 2)
+    data = int("".join(str(bit) for bit in data1 + data2), 2)
+    return rolling, fixed, data
+
+
 def encode(rolling, fixed):
     """Encode a Security+ payload into 40 payload symbols
 
