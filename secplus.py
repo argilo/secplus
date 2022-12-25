@@ -139,12 +139,19 @@ def _encode_v2_rolling(rolling):
     return rolling1, rolling2
 
 
-def _decode_v2_half(code):
-    if code[:2] != [0, 0]:
-        raise ValueError("First two bits of packet were not zero")
+def _decode_v2_half_parts(packet_type, indicator, payload):
+    if packet_type == 0:
+        payload_length = 30
+    elif packet_type == 1:
+        payload_length = 54
+    elif packet_type == 2:
+        raise ValueError("Unsupported packet type")
+    else:
+        raise ValueError("Invalid packet type")
 
-    indicator = code[2:10]
-    payload = code[10:]
+    if len(payload) != payload_length:
+        raise ValueError("Incorrect payload length")
+
     parts = _v2_unscramble(indicator, payload)
 
     rolling = []
@@ -155,50 +162,54 @@ def _decode_v2_half(code):
     if 3 in rolling:
         raise ValueError("Illegal value for ternary bit")
 
-    fixed = parts[0] + parts[1]
+    fixed = parts[0][:10] + parts[1][:10]
 
-    return rolling, fixed
+    if packet_type == 0:
+        data = None
+    if packet_type == 1:
+        if rolling[:4] != rolling[-4:]:
+            raise ValueError("Last four ternary bits do not repeat first four")
+        rolling = rolling[:-4]
+        data = parts[0][10:] + parts[1][10:]
+
+    return rolling, fixed, data
+
+
+def _decode_v2_half(code):
+    packet_type = (code[0] << 1) | code[1]
+    indicator = code[2:10]
+    payload = code[10:]
+    return _decode_v2_half_parts(packet_type, indicator, payload)
 
 
 def decode_v2(code):
-    """Decode a Security+ 2.0 transmission and return the rolling and fixed codes.
+    """Decode a Security+ 2.0 transmission and return the rolling code, fixed
+    code, and data.
 
     Arguments:
     code -- a list containing the 80 payload bits from a pair of packets
 
     Raises a ValueError if the payload bits are invalid for any reason.
     """
-    rolling1, fixed1 = _decode_v2_half(code[:40])
-    rolling2, fixed2 = _decode_v2_half(code[40:])
+    half_len = len(code) // 2
+    rolling1, fixed1, data1 = _decode_v2_half(code[:half_len])
+    rolling2, fixed2, data2 = _decode_v2_half(code[half_len:])
 
     rolling = _decode_v2_rolling(rolling1, rolling2)
     fixed = int("".join(str(bit) for bit in fixed1 + fixed2), 2)
-    return rolling, fixed
+    if data1 is None:
+        data = None
+    else:
+        data = int("".join(str(bit) for bit in data1 + data2), 2)
+    return rolling, fixed, data
 
 
 def _decode_wireline_half(code):
     if code[8:10] != [0, 0]:
-        raise ValueError("bits 8 and 9 of packet were not zero")
-
+        raise ValueError("Unexpected values for bits 8 and 9")
     indicator = code[:8]
     payload = code[10:]
-    parts = _v2_unscramble(indicator, payload)
-
-    rolling = []
-    for i in range(0, len(indicator), 2):
-        rolling.append((indicator[i] << 1) | indicator[i+1])
-    for i in range(0, len(parts[2]), 2):
-        rolling.append((parts[2][i] << 1) | parts[2][i+1])
-    if 3 in rolling:
-        raise ValueError("Illegal value for ternary bit")
-
-    if rolling[:4] != rolling[-4:]:
-        raise ValueError("Last four ternary bits do not repeat first four")
-
-    fixed = parts[0][:10] + parts[1][:10]
-    data = parts[0][10:] + parts[1][10:]
-
-    return rolling[:-4], fixed, data
+    return _decode_v2_half_parts(1, indicator, payload)
 
 
 def decode_wireline(code):
@@ -283,7 +294,7 @@ def encode_ook(rolling, fixed, fast=True):
     return ook_bits
 
 
-def _encode_v2_half(rolling, fixed):
+def _encode_v2_half_parts(rolling, fixed, data):
     indicator = []
     for digit in rolling[:4]:
         indicator.append(digit >> 1)
@@ -294,17 +305,34 @@ def _encode_v2_half(rolling, fixed):
         parts[2].append(digit >> 1)
         parts[2].append(digit & 1)
 
+    if data is None:
+        packet_type = 0
+    if data is not None:
+        packet_type = 1
+        parts[0] += data[:8]
+        parts[1] += data[8:]
+        for digit in rolling[:4]:
+            parts[2].append(digit >> 1)
+            parts[2].append(digit & 1)
+
     payload = _v2_scramble(indicator, parts)
 
-    return [0, 0] + indicator + payload
+    return packet_type, indicator, payload
 
 
-def encode_v2(rolling, fixed):
-    """Encode a Security+ 2.0 payload into 80 payload bits
+def _encode_v2_half(rolling, fixed, data):
+    packet_type, indicator, payload = _encode_v2_half_parts(rolling, fixed, data)
+    packet_type_bits = [packet_type >> 1, packet_type & 1]
+    return packet_type_bits + indicator + payload
+
+
+def encode_v2(rolling, fixed, data=None):
+    """Encode a Security+ 2.0 payload into 80 or 128 bits
 
     Arguments:
-    rolling -- the rolling code
-    fixed -- the fixed code
+    rolling -- the rolling code (28 bits)
+    fixed -- the fixed code (40 bits)
+    data -- the data (32 bits, optional)
 
     Raises a ValueError if the rolling or fixed code is too large.
     """
@@ -320,22 +348,21 @@ def encode_v2(rolling, fixed):
     fixed1 = fixed_bits[:20]
     fixed2 = fixed_bits[20:]
 
-    return _encode_v2_half(rolling1, fixed1) + _encode_v2_half(rolling2, fixed2)
+    if data is None:
+        data1 = None
+        data2 = None
+    else:
+        if data >= 2**32:
+            raise ValueError("Data must be less than 2^32")
+        data_bits = [int(bit) for bit in "{0:032b}".format(data)]
+        data1 = data_bits[:16]
+        data2 = data_bits[16:]
+
+    return _encode_v2_half(rolling1, fixed1, data1) + _encode_v2_half(rolling2, fixed2, data2)
 
 
 def _encode_wireline_half(rolling, fixed, data):
-    indicator = []
-    for digit in rolling[:4]:
-        indicator.append(digit >> 1)
-        indicator.append(digit & 1)
-
-    parts = [fixed[:10] + data[:8], fixed[10:] + data[8:], []]
-    for digit in rolling[4:] + rolling[:4]:
-        parts[2].append(digit >> 1)
-        parts[2].append(digit & 1)
-
-    payload = _v2_scramble(indicator, parts)
-
+    _, indicator, payload = _encode_v2_half_parts(rolling, fixed, data)
     return indicator + [0, 0] + payload
 
 
@@ -343,7 +370,7 @@ def encode_wireline(rolling, fixed, data):
     """Encode a Security+ 2.0 wireline payload into 19 bytes
 
     Arguments:
-    rolling -- the rolling code
+    rolling -- the rolling code (28 bits)
     fixed -- the fixed code (40 bits)
     data -- the data (32 bits)
 
@@ -387,18 +414,20 @@ def _manchester(code):
     return output
 
 
-def encode_v2_manchester(rolling, fixed):
+def encode_v2_manchester(rolling, fixed, data=None):
     """Encode a Security+ 2.0 payload and produce a Manchester stream for transmission
 
     Arguments:
-    rolling -- the rolling code
-    fixed -- the fixed code
+    rolling -- the rolling code (28 bits)
+    fixed -- the fixed code (40 bits)
+    data -- the data (32 bits, optional)
     """
 
     preamble = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1]
-    code = encode_v2(rolling, fixed)
-    packet1 = preamble + [0, 0] + code[:40]
-    packet2 = preamble + [0, 1] + code[40:]
+    code = encode_v2(rolling, fixed, data)
+    half_len = len(code) // 2
+    packet1 = preamble + [0, 0] + code[:half_len]
+    packet2 = preamble + [0, 1] + code[half_len:]
     blank = [0] * 33
 
     return _manchester(packet1) + blank + _manchester(packet2) + blank
@@ -443,11 +472,26 @@ def _fixed_pretty(fixed):
     return result
 
 
-def pretty_v2(rolling, fixed):
-    """Pretty-print a Security+ 2.0 rolling and fixed code"""
-    return "Security+ 2.0:  rolling={0}  fixed={1}  ({2})".format(rolling, fixed,
-                                                                  _fixed_pretty_v2(fixed))
+def pretty_v2(rolling, fixed, data=None):
+    """Pretty-print a Security+ 2.0 rolling code, fixed code, and data"""
+    pretty = "Security+ 2.0:  rolling={0}  fixed={1}  ({2})".format(rolling, fixed, _fixed_pretty_v2(fixed))
+    if data is not None:
+        pretty += "  data={0}  ({1})".format(data, _data_pretty_v2(data))
+    return pretty
 
 
 def _fixed_pretty_v2(fixed):
     return "button={0} remote_id={1}".format(fixed >> 32, fixed & 0xffffffff)
+
+
+def _data_pretty_v2(data):
+    data1 = data >> 24
+    data2 = (data >> 16) & 0xff
+    data3 = (data >> 12) & 0xf
+    data4 = data & 0xfff
+    pin = (data2 << 8) | data1
+    if data3 == 3:
+        return "pin=enter"
+    else:
+        pin = (data2 << 8) | data1
+        return "pin={0:04} data3={1} data4={2}".format(pin, data3, data4)

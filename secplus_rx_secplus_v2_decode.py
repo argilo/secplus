@@ -76,7 +76,15 @@ class blk(gr.sync_block):
         start = manchester.find("1010101010101010101010101010101001010101")
         if start == -1:
             return
-        manchester = manchester[start:start+124]
+
+        if manchester[start+44:start+48] == "1010":
+            packet_length = 40
+        elif manchester[start+44:start+48] == "1001":
+            packet_length = 64
+        else:
+            return
+
+        manchester = manchester[start:start+44+(packet_length*2)]
         baseband = []
         for i in range(0, len(manchester), 2):
             if manchester[i:i+2] == "01":
@@ -85,16 +93,16 @@ class blk(gr.sync_block):
                 baseband.append(0)
             else:
                 return
-    
-        if baseband[21] == 0:
+
+        if baseband[20:22] == [0, 0]:
             self.pair = baseband[22:]
-        elif baseband[21] == 1 and len(self.pair) == 40:
+        elif baseband[20:22] == [0, 1] and len(self.pair) == packet_length:
             self.pair += baseband[22:]
 
-        if len(self.pair) == 80 and self.pair != self.last_pair:
+        if len(self.pair) == packet_length*2 and self.pair != self.last_pair:
             try:
-                rolling, fixed = secplus.decode_v2(self.pair)
-                print(secplus.pretty_v2(rolling, fixed))
+                rolling, fixed, data = secplus.decode_v2(self.pair)
+                print(secplus.pretty_v2(rolling, fixed, data))
                 self.last_pair = self.pair
             except ValueError:
                 pass

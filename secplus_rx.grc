@@ -23,6 +23,7 @@ options:
     sizing_mode: fixed
     thread_safe_setters: ''
     title: ''
+    window_size: (1000,1000)
   states:
     bus_sink: false
     bus_source: false
@@ -748,17 +749,21 @@ blocks:
       \ if rising else 1)\n        else:\n            self.buffer = []\n\n    def\
       \ process_buffer(self):\n        manchester = \"\".join(str(b) for b in self.buffer)\n\
       \        start = manchester.find(\"1010101010101010101010101010101001010101\"\
-      )\n        if start == -1:\n            return\n        manchester = manchester[start:start+124]\n\
-      \        baseband = []\n        for i in range(0, len(manchester), 2):\n   \
-      \         if manchester[i:i+2] == \"01\":\n                baseband.append(1)\n\
-      \            elif manchester[i:i+2] == \"10\":\n                baseband.append(0)\n\
-      \            else:\n                return\n    \n        if baseband[21] ==\
-      \ 0:\n            self.pair = baseband[22:]\n        elif baseband[21] == 1\
-      \ and len(self.pair) == 40:\n            self.pair += baseband[22:]\n\n    \
-      \    if len(self.pair) == 80 and self.pair != self.last_pair:\n            try:\n\
-      \                rolling, fixed = secplus.decode_v2(self.pair)\n           \
-      \     print(secplus.pretty_v2(rolling, fixed))\n                self.last_pair\
-      \ = self.pair\n            except ValueError:\n                pass\n"
+      )\n        if start == -1:\n            return\n\n        if manchester[start+44:start+48]\
+      \ == \"1010\":\n            packet_length = 40\n        elif manchester[start+44:start+48]\
+      \ == \"1001\":\n            packet_length = 64\n        else:\n            return\n\
+      \n        manchester = manchester[start:start+44+(packet_length*2)]\n      \
+      \  baseband = []\n        for i in range(0, len(manchester), 2):\n         \
+      \   if manchester[i:i+2] == \"01\":\n                baseband.append(1)\n  \
+      \          elif manchester[i:i+2] == \"10\":\n                baseband.append(0)\n\
+      \            else:\n                return\n\n        if baseband[20:22] ==\
+      \ [0, 0]:\n            self.pair = baseband[22:]\n        elif baseband[20:22]\
+      \ == [0, 1] and len(self.pair) == packet_length:\n            self.pair += baseband[22:]\n\
+      \n        if len(self.pair) == packet_length*2 and self.pair != self.last_pair:\n\
+      \            try:\n                rolling, fixed, data = secplus.decode_v2(self.pair)\n\
+      \                print(secplus.pretty_v2(rolling, fixed, data))\n          \
+      \      self.last_pair = self.pair\n            except ValueError:\n        \
+      \        pass\n"
     affinity: ''
     alias: ''
     comment: ''
@@ -788,3 +793,4 @@ connections:
 
 metadata:
   file_format: 1
+  grc_version: 3.10.5.0

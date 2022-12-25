@@ -180,10 +180,23 @@ class TestSecplus(unittest.TestCase):
             rolling = random.randrange(2**28)
             fixed = random.randrange(2**40)
 
-            rolling_out, fixed_out = secplus.decode_v2(secplus.encode_v2(rolling, fixed))
+            rolling_out, fixed_out, data_out = secplus.decode_v2(secplus.encode_v2(rolling, fixed))
 
             self.assertEqual(rolling, rolling_out)
             self.assertEqual(fixed, fixed_out)
+            self.assertIsNone(data_out)
+
+    def test_encode_v2_decode_v2_with_data(self):
+        for _ in range(20000):
+            rolling = random.randrange(2**28)
+            fixed = random.randrange(2**40)
+            data = random.randrange(2**32)
+
+            rolling_out, fixed_out, data_out = secplus.decode_v2(secplus.encode_v2(rolling, fixed, data))
+
+            self.assertEqual(rolling, rolling_out)
+            self.assertEqual(fixed, fixed_out)
+            self.assertEqual(data, data_out)
 
     def test_encode_v2_rolling_limit(self):
         rolling = 2**28
@@ -221,18 +234,20 @@ class TestSecplus(unittest.TestCase):
     def test_decode_v2(self):
         for code, rolling, fixed in zip(self.v2_codes, self.v2_rolling_list, self.v2_fixed_list):
             code = [int(bit) for bit in code]
-            rolling_out, fixed_out = secplus.decode_v2(code)
+            rolling_out, fixed_out, data_out = secplus.decode_v2(code)
 
             self.assertEqual(rolling, rolling_out)
             self.assertEqual(fixed, fixed_out)
+            self.assertIsNone(data_out)
 
-    def test_decode_v2_zero_bits(self):
+    def test_decode_v2_invalid_type(self):
         code = [int(bit) for bit in self.v2_codes[0]]
 
-        for bit in [0, 1, 40, 41]:
+        for bits in [[0, 1], [40, 41]]:
             broken_code = code.copy()
-            broken_code[bit] = 1
-            with self.assertRaisesRegex(ValueError, "First two bits of packet were not zero"):
+            for bit in bits:
+                broken_code[bit] = 1
+            with self.assertRaisesRegex(ValueError, "Invalid packet type"):
                 secplus.decode_v2(broken_code)
 
     def test_decode_v2_invalid_ternary(self):

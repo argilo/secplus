@@ -6,9 +6,9 @@
 #
 # GNU Radio Python Flow Graph
 # Title: Secplus Rx
-# GNU Radio version: 3.9.3.0
+# GNU Radio version: 3.10.5.0
 
-from distutils.version import StrictVersion
+from packaging.version import Version as StrictVersion
 
 if __name__ == '__main__':
     import ctypes
@@ -95,7 +95,7 @@ class secplus_rx(gr.top_block, Qt.QWidget):
         self._freq_labels = ['310 MHz', '315 MHz', '390 MHz']
         # Create the combo box
         # Create the radio buttons
-        self._freq_group_box = Qt.QGroupBox('Frequency' + ": ")
+        self._freq_group_box = Qt.QGroupBox("Frequency" + ": ")
         self._freq_box = Qt.QHBoxLayout()
         class variable_chooser_button_group(Qt.QButtonGroup):
             def __init__(self, parent=None):
@@ -127,7 +127,7 @@ class secplus_rx(gr.top_block, Qt.QWidget):
                 taps=[],
                 fractional_bw=0)
         self.qtgui_time_sink_x_0 = qtgui.time_sink_f(
-            100000 // decim1 // decim2, #size
+            (100000 // decim1 // decim2), #size
             samp_rate // decim1 // decim2, #samp_rate
             "", #name
             1, #number of inputs
@@ -179,7 +179,7 @@ class secplus_rx(gr.top_block, Qt.QWidget):
         )
         self.osmosdr_source_0.set_time_unknown_pps(osmosdr.time_spec_t())
         self.osmosdr_source_0.set_sample_rate(samp_rate)
-        self.osmosdr_source_0.set_center_freq(freq - 300e3, 0)
+        self.osmosdr_source_0.set_center_freq((freq - 300e3), 0)
         self.osmosdr_source_0.set_freq_corr(0, 0)
         self.osmosdr_source_0.set_dc_offset_mode(0, 0)
         self.osmosdr_source_0.set_iq_balance_mode(0, 0)
@@ -189,9 +189,8 @@ class secplus_rx(gr.top_block, Qt.QWidget):
         self.osmosdr_source_0.set_bb_gain(32, 0)
         self.osmosdr_source_0.set_antenna('', 0)
         self.osmosdr_source_0.set_bandwidth(1e6, 0)
-        self.blocks_rotator_cc_0 = blocks.rotator_cc(2 * math.pi * -300e3 / samp_rate, False)
+        self.blocks_rotator_cc_0 = blocks.rotator_cc((2 * math.pi * -300e3 / samp_rate), False)
         self.blocks_complex_to_mag_0 = blocks.complex_to_mag(1)
-
 
 
         ##################################################
@@ -228,7 +227,7 @@ class secplus_rx(gr.top_block, Qt.QWidget):
 
     def set_samp_rate(self, samp_rate):
         self.samp_rate = samp_rate
-        self.blocks_rotator_cc_0.set_phase_inc(2 * math.pi * -300e3 / self.samp_rate)
+        self.blocks_rotator_cc_0.set_phase_inc((2 * math.pi * -300e3 / self.samp_rate))
         self.osmosdr_source_0.set_sample_rate(self.samp_rate)
         self.qtgui_time_sink_x_0.set_samp_rate(self.samp_rate // self.decim1 // self.decim2)
         self.secplus_decode.samp_rate = self.samp_rate // self.decim1 // self.decim2
@@ -240,7 +239,7 @@ class secplus_rx(gr.top_block, Qt.QWidget):
     def set_freq(self, freq):
         self.freq = freq
         self._freq_callback(self.freq)
-        self.osmosdr_source_0.set_center_freq(self.freq - 300e3, 0)
+        self.osmosdr_source_0.set_center_freq((self.freq - 300e3), 0)
 
     def get_decim2(self):
         return self.decim2
