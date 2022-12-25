@@ -100,6 +100,21 @@ def _v2_unscramble(indicator, payload):
     return parts
 
 
+def _v2_scramble(indicator, parts):
+    order = _ORDER[(indicator[0] << 3) | (indicator[1] << 2) | (indicator[2] << 1) | indicator[3]]
+    invert = _INVERT[(indicator[4] << 3) | (indicator[5] << 2) | (indicator[6] << 1) | indicator[7]]
+
+    parts_permuted = [parts[order[i]] for i in range(3)]
+    for i in range(3):
+        if invert[i]:
+            parts_permuted[i] = [bit ^ 1 for bit in parts_permuted[i]]
+
+    payload = []
+    for i in range(len(parts_permuted[0])):
+        payload += [parts_permuted[0][i], parts_permuted[1][i], parts_permuted[2][i]]
+    return payload
+
+
 def _decode_v2_rolling(rolling1, rolling2):
     rolling_digits = rolling2[8:] + rolling1[8:]
     rolling_digits += rolling2[4:8] + rolling1[4:8]
@@ -111,6 +126,17 @@ def _decode_v2_rolling(rolling1, rolling2):
     if rolling >= 2**28:
         raise ValueError("Rolling code was not in expected range")
     return int("{0:028b}".format(rolling)[::-1], 2)
+
+
+def _encode_v2_rolling(rolling):
+    rolling = int("{0:028b}".format(rolling)[::-1], 2)
+    rolling_base3 = [0] * 18
+    for i in range(17, -1, -1):
+        rolling_base3[i] = rolling % 3
+        rolling //= 3
+    rolling1 = rolling_base3[14:18] + rolling_base3[6:10] + rolling_base3[1:2]
+    rolling2 = rolling_base3[10:14] + rolling_base3[2:6] + rolling_base3[0:1]
+    return rolling1, rolling2
 
 
 def _decode_v2_half(code):
@@ -258,29 +284,19 @@ def encode_ook(rolling, fixed, fast=True):
 
 
 def _encode_v2_half(rolling, fixed):
-    code = [0, 0]
-    parts = [fixed[:10], fixed[10:], []]
-
+    indicator = []
     for digit in rolling[:4]:
-        code.append(digit >> 1)
-        code.append(digit & 1)
+        indicator.append(digit >> 1)
+        indicator.append(digit & 1)
+
+    parts = [fixed[:10], fixed[10:], []]
     for digit in rolling[4:]:
         parts[2].append(digit >> 1)
         parts[2].append(digit & 1)
 
-    order = _ORDER[(code[2] << 3) | (code[3] << 2) | (code[4] << 1) | code[5]]
-    invert = _INVERT[(code[6] << 3) | (code[7] << 2) | (code[8] << 1) | code[9]]
+    payload = _v2_scramble(indicator, parts)
 
-    parts_permuted = [parts[order[i]] for i in range(3)]
-
-    for i in range(3):
-        if invert[i]:
-            parts_permuted[i] = [bit ^ 1 for bit in parts_permuted[i]]
-
-    for i in range(10):
-        code += [parts_permuted[0][i], parts_permuted[1][i], parts_permuted[2][i]]
-
-    return code
+    return [0, 0] + indicator + payload
 
 
 def encode_v2(rolling, fixed):
@@ -298,13 +314,7 @@ def encode_v2(rolling, fixed):
     if fixed >= 2**40:
         raise ValueError("Fixed code must be less than 2^40")
 
-    rolling = int("{0:028b}".format(rolling)[::-1], 2)
-    rolling_base3 = [0] * 18
-    for i in range(17, -1, -1):
-        rolling_base3[i] = rolling % 3
-        rolling //= 3
-    rolling1 = rolling_base3[14:18] + rolling_base3[6:10] + rolling_base3[1:2]
-    rolling2 = rolling_base3[10:14] + rolling_base3[2:6] + rolling_base3[0:1]
+    rolling1, rolling2 = _encode_v2_rolling(rolling)
 
     fixed_bits = [int(bit) for bit in "{0:040b}".format(fixed)]
     fixed1 = fixed_bits[:20]
