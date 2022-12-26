@@ -212,6 +212,14 @@ class TestSecplus(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, r"Fixed code must be less than 2\^40"):
             secplus.encode_v2(rolling, fixed)
 
+    def test_encode_v2_data_limit(self):
+        rolling = 2**28 - 1
+        fixed = 2**40 - 1
+        data = 2**32
+
+        with self.assertRaisesRegex(ValueError, r"Data must be less than 2\^32"):
+            secplus.encode_v2(rolling, fixed, data)
+
     def test_encode_v2(self):
         for code, rolling, fixed in zip(self.v2_codes, self.v2_rolling_list, self.v2_fixed_list):
             code = [int(bit) for bit in code]
