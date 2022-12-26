@@ -87,10 +87,14 @@ class TestSecplus(unittest.TestCase):
     00000101101100101110001110111100000111010000001000111000110000010100100110100110
     00101001011111111000111011001100111010000010100101111001101001000101101100101101
     00101001001001011110001111101000011110100010010110001010011110110011011111011111
+    01000100001011011000011010100011110101111001001000001001101011010100100001110010010110011010011110010011110110011110010010010011
+    01100110101100101000101100011101111010110001001000000001010101100100001010001101101011111101101011101101001001101001111101111101
+    01100110010110110010110111000110100001101010010011011010000111110100000000010110100010100110100010110100010010110010110110110110
     """.split()
 
-    v2_rolling_list = range(240124710, 240124726)
-    v2_fixed_list = [0x1074c58200]*4 + [0x0e74c58200]*4 + [0x0f74c58200]*4 + [0x1174c58200]*4
+    v2_rolling_list = list(range(240124710, 240124726)) + list(range(240129675, 240129678))
+    v2_fixed_list = [0x1074c58200]*4 + [0x0e74c58200]*4 + [0x0f74c58200]*4 + [0x1174c58200]*4 + [0xfa36d91000]*3
+    v2_data_list = [None]*16 + [0xfb03d000]*3
 
     def test_encode_decode(self):
         for _ in range(20000):
@@ -221,9 +225,9 @@ class TestSecplus(unittest.TestCase):
             secplus.encode_v2(rolling, fixed, data)
 
     def test_encode_v2(self):
-        for code, rolling, fixed in zip(self.v2_codes, self.v2_rolling_list, self.v2_fixed_list):
+        for code, rolling, fixed, data in zip(self.v2_codes, self.v2_rolling_list, self.v2_fixed_list, self.v2_data_list):
             code = [int(bit) for bit in code]
-            code_out = secplus.encode_v2(rolling, fixed)
+            code_out = secplus.encode_v2(rolling, fixed, data)
 
             self.assertEqual(code, code_out)
 
@@ -240,13 +244,13 @@ class TestSecplus(unittest.TestCase):
         self.assertEqual(manchester, manchester_out)
 
     def test_decode_v2(self):
-        for code, rolling, fixed in zip(self.v2_codes, self.v2_rolling_list, self.v2_fixed_list):
+        for code, rolling, fixed, data in zip(self.v2_codes, self.v2_rolling_list, self.v2_fixed_list, self.v2_data_list):
             code = [int(bit) for bit in code]
             rolling_out, fixed_out, data_out = secplus.decode_v2(code)
 
             self.assertEqual(rolling, rolling_out)
             self.assertEqual(fixed, fixed_out)
-            self.assertIsNone(data_out)
+            self.assertEqual(data, data_out)
 
     def test_decode_v2_invalid_type(self):
         code = [int(bit) for bit in self.v2_codes[0]]
@@ -303,10 +307,13 @@ class TestSecplus(unittest.TestCase):
                 pass
 
     def test_pretty_v2(self):
-        for rolling, fixed in zip(self.v2_rolling_list, self.v2_fixed_list):
+        for rolling, fixed, data in zip(self.v2_rolling_list, self.v2_fixed_list, self.v2_data_list):
             button = fixed >> 32
-            pretty = f"Security+ 2.0:  rolling={rolling}  fixed={fixed}  (button={button} remote_id=1959100928)"
-            pretty_out = secplus.pretty_v2(rolling, fixed)
+            remote_id = fixed & 0xffffffff
+            pretty = f"Security+ 2.0:  rolling={rolling}  fixed={fixed}  (button={button} remote_id={remote_id})"
+            if data is not None:
+                pretty += f"  data={data}  (pin=1019 data3=13 data4=0)"
+            pretty_out = secplus.pretty_v2(rolling, fixed, data)
             self.assertEqual(pretty, pretty_out)
 
     def test_encode_wireline_decode_wireline(self):
