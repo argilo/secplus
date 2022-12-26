@@ -311,6 +311,16 @@ class TestSecplus(unittest.TestCase):
             self.assertEqual(fixed, fixed_out)
             self.assertEqual(data, data_out)
 
+    def test_decode_wireline_robustness(self):
+        for _ in range(20000):
+            random_code = bytes([0x55, 0x01, 0x00] + [random.randrange(256) for _ in range(16)])
+            try:
+                rolling, fixed, data = secplus.decode_wireline(random_code)
+                self.assertLess(rolling, 2**28)
+                self.assertLess(fixed, 2**40)
+                self.assertLess(data, 2**32)
+            except ValueError:
+                pass
 
 if __name__ == '__main__':
     unittest.main()
