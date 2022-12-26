@@ -332,5 +332,13 @@ class TestSecplus(unittest.TestCase):
             except ValueError:
                 pass
 
+    def test_decode_wireline_input_validation(self):
+        with self.assertRaisesRegex(ValueError, "Input must be bytes"):
+            secplus.decode_wireline("foo")
+        with self.assertRaisesRegex(ValueError, "Input must be 19 bytes long"):
+            secplus.decode_wireline(b"foo")
+        with self.assertRaisesRegex(ValueError, "First three bytes must be 0x55, 0x01, 0x00"):
+            secplus.decode_wireline(b"foo bar foo bar foo")
+
 if __name__ == '__main__':
     unittest.main()
