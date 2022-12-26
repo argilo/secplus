@@ -340,5 +340,29 @@ class TestSecplus(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "First three bytes must be 0x55, 0x01, 0x00"):
             secplus.decode_wireline(b"foo bar foo bar foo")
 
+    def test_encode_wireline_rolling_limit(self):
+        rolling = 2**28
+        fixed = 2**40 - 1
+        data = 2**32 - 1
+
+        with self.assertRaisesRegex(ValueError, r"Rolling code must be less than 2\^28"):
+            secplus.encode_wireline(rolling, fixed, data)
+
+    def test_encode_wireline_fixed_limit(self):
+        rolling = 2**28 - 1
+        fixed = 2**40
+        data = 2**32 - 1
+
+        with self.assertRaisesRegex(ValueError, r"Fixed code must be less than 2\^40"):
+            secplus.encode_wireline(rolling, fixed, data)
+
+    def test_encode_wireline_data_limit(self):
+        rolling = 2**28 - 1
+        fixed = 2**40 - 1
+        data = 2**32
+
+        with self.assertRaisesRegex(ValueError, r"Data must be less than 2\^32"):
+            secplus.encode_wireline(rolling, fixed, data)
+
 if __name__ == '__main__':
     unittest.main()
