@@ -284,11 +284,13 @@ class TestSecplus(unittest.TestCase):
 
     def test_decode_v2_robustness(self):
         for _ in range(20000):
-            random_code = [random.randrange(2) for _ in range(80)]
+            random_code = [random.randrange(2) for _ in range(random.choice([80, 128]))]
             try:
-                rolling, fixed = secplus.decode_v2(random_code)
+                rolling, fixed, data = secplus.decode_v2(random_code)
                 self.assertLess(rolling, 2**28)
                 self.assertLess(fixed, 2**40)
+                if data is not None:
+                    self.assertLess(data, 2**32)
             except ValueError:
                 pass
 
