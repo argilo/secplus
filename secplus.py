@@ -326,6 +326,16 @@ def _encode_v2_half(rolling, fixed, data):
     return packet_type_bits + indicator + payload
 
 
+def _v2_check_limits(rolling, fixed, data):
+    if rolling >= 2**28:
+        raise ValueError("Rolling code must be less than 2^28")
+    if fixed >= 2**40:
+        raise ValueError("Fixed code must be less than 2^40")
+    if data is not None:
+        if data >= 2**32:
+            raise ValueError("Data must be less than 2^32")
+
+
 def encode_v2(rolling, fixed, data=None):
     """Encode a Security+ 2.0 payload into 80 or 128 bits
 
@@ -337,10 +347,7 @@ def encode_v2(rolling, fixed, data=None):
     Raises a ValueError if the rolling or fixed code is too large.
     """
 
-    if rolling >= 2**28:
-        raise ValueError("Rolling code must be less than 2^28")
-    if fixed >= 2**40:
-        raise ValueError("Fixed code must be less than 2^40")
+    _v2_check_limits(rolling, fixed, data)
 
     rolling1, rolling2 = _encode_v2_rolling(rolling)
 
@@ -352,8 +359,6 @@ def encode_v2(rolling, fixed, data=None):
         data1 = None
         data2 = None
     else:
-        if data >= 2**32:
-            raise ValueError("Data must be less than 2^32")
         data_bits = [int(bit) for bit in "{0:032b}".format(data)]
         data1 = data_bits[:16]
         data2 = data_bits[16:]
@@ -377,12 +382,7 @@ def encode_wireline(rolling, fixed, data):
     Raises a ValueError if the rolling code, fixed code, or data is too large.
     """
 
-    if rolling >= 2**28:
-        raise ValueError("Rolling code must be less than 2^28")
-    if fixed >= 2**40:
-        raise ValueError("Fixed code must be less than 2^40")
-    if data >= 2**32:
-        raise ValueError("Data must be less than 2^32")
+    _v2_check_limits(rolling, fixed, data)
 
     rolling1, rolling2 = _encode_v2_rolling(rolling)
 
