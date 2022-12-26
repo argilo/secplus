@@ -187,7 +187,7 @@ def decode_v2(code):
     code, and data.
 
     Arguments:
-    code -- a list containing the 80 payload bits from a pair of packets
+    code -- a list containing the 80 or 128 payload bits from a pair of packets
 
     Raises a ValueError if the payload bits are invalid for any reason.
     """
