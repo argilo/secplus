@@ -227,7 +227,8 @@ class TestSecplus(unittest.TestCase):
             secplus.encode_v2(rolling, fixed, data)
 
     def test_encode_v2(self):
-        for code, rolling, fixed, data in zip(self.v2_codes, self.v2_rolling_list, self.v2_fixed_list, self.v2_data_list):
+        for code, rolling, fixed, data in zip(self.v2_codes, self.v2_rolling_list,
+                                              self.v2_fixed_list, self.v2_data_list):
             code = [int(bit) for bit in code]
             code_out = secplus.encode_v2(rolling, fixed, data)
 
@@ -246,7 +247,8 @@ class TestSecplus(unittest.TestCase):
         self.assertEqual(manchester, manchester_out)
 
     def test_decode_v2(self):
-        for code, rolling, fixed, data in zip(self.v2_codes, self.v2_rolling_list, self.v2_fixed_list, self.v2_data_list):
+        for code, rolling, fixed, data in zip(self.v2_codes, self.v2_rolling_list,
+                                              self.v2_fixed_list, self.v2_data_list):
             code = [int(bit) for bit in code]
             rolling_out, fixed_out, data_out = secplus.decode_v2(code)
 
@@ -382,6 +384,7 @@ class TestSecplus(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, r"Data must be less than 2\^32"):
             secplus.encode_wireline(rolling, fixed, data)
+
 
 if __name__ == '__main__':
     unittest.main()
