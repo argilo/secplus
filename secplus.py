@@ -166,7 +166,7 @@ def _decode_v2_half_parts(packet_type, indicator, payload):
 
     if packet_type == 0:
         data = None
-    if packet_type == 1:
+    elif packet_type == 1:
         if rolling[:4] != rolling[-4:]:
             raise ValueError("Last four ternary bits do not repeat first four")
         rolling = rolling[:-4]
