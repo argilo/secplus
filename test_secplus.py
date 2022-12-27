@@ -307,6 +307,19 @@ class TestSecplus(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "Illegal value for ternary bit"):
                 secplus.decode_v2(broken_code)
 
+    def test_decode_v2_incorrect_last_four_ternary(self):
+        code = "01001010011101101001101100011110100000111001001011001010001101110100101001100001001100000000001100000000100100001100001000000001"
+        code = [int(bit) for bit in code]
+
+        for bit in [42, 48, 54, 60, 106, 112, 118, 124]:
+            correct_bit = (code[bit] << 1) | code[bit+3]
+            broken_code = code.copy()
+            for broken_bit in ((correct_bit + 1) % 3, (correct_bit + 2) % 3):
+                broken_code[bit] = broken_bit >> 1
+                broken_code[bit+3] = broken_bit & 1
+                with self.assertRaisesRegex(ValueError, "Last four ternary bits do not repeat first four"):
+                    secplus.decode_v2(broken_code)
+
     def test_decode_v2_invalid_rolling_code(self):
         code = "00101010011101111000010100011000010011100010101001110100011110110010110001000101"
         code = [int(bit) for bit in code]
