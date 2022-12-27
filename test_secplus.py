@@ -276,6 +276,16 @@ class TestSecplus(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "Invalid packet type"):
                 secplus.decode_v2(broken_code)
 
+    def test_decode_v2_incorrect_payload_length(self):
+        for code in self.v2_codes:
+            code = [int(bit) for bit in code]
+            if len(code) == 80:
+                broken_code = code + [random.randrange(2) for _ in range(80, 128)]
+            elif len(code) == 128:
+                broken_code = code[:80]
+            with self.assertRaisesRegex(ValueError, "Incorrect payload length"):
+                secplus.decode_v2(broken_code)
+
     def test_decode_v2_invalid_ternary(self):
         code = [int(bit) for bit in self.v2_codes[0]]
 
