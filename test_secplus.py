@@ -254,13 +254,23 @@ class TestSecplus(unittest.TestCase):
             self.assertEqual(fixed, fixed_out)
             self.assertEqual(data, data_out)
 
+    def test_decode_v2_unsupported_type(self):
+        code = [int(bit) for bit in self.v2_codes[0]]
+
+        for offset in (0, 40):
+            broken_code = code.copy()
+            broken_code[offset] = 1
+            broken_code[offset+1] = 0
+            with self.assertRaisesRegex(ValueError, "Unsupported packet type"):
+                secplus.decode_v2(broken_code)
+
     def test_decode_v2_invalid_type(self):
         code = [int(bit) for bit in self.v2_codes[0]]
 
-        for bits in [[0, 1], [40, 41]]:
+        for offset in (0, 40):
             broken_code = code.copy()
-            for bit in bits:
-                broken_code[bit] = 1
+            broken_code[offset] = 1
+            broken_code[offset+1] = 1
             with self.assertRaisesRegex(ValueError, "Invalid packet type"):
                 secplus.decode_v2(broken_code)
 
