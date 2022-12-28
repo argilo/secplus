@@ -377,7 +377,7 @@ class TestSecplus(unittest.TestCase):
             fixed = random.randrange(2**40)
             data = random.randrange(2**32)
             code = secplus.encode_v2(rolling, fixed, data)
-            random_code = [b if random.random() > 1/64 else b^1 for b in code]
+            random_code = [b if random.random() > 1/64 else b ^ 1 for b in code]
             try:
                 rolling, fixed, data = secplus.decode_v2(random_code)
                 self.assertLess(rolling, 2**28)
