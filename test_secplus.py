@@ -372,6 +372,20 @@ class TestSecplus(unittest.TestCase):
             except ValueError:
                 pass
 
+        for _ in range(self.TEST_CYCLES):
+            rolling = random.randrange(2**28)
+            fixed = random.randrange(2**40)
+            data = random.randrange(2**32)
+            code = secplus.encode_v2(rolling, fixed, data)
+            random_code = [b if random.random() > 1/64 else b^1 for b in code]
+            try:
+                rolling, fixed, data = secplus.decode_v2(random_code)
+                self.assertLess(rolling, 2**28)
+                self.assertLess(fixed, 2**40)
+                self.assertLess(data, 2**32)
+            except ValueError:
+                pass
+
     def test_pretty_v2(self):
         for rolling, fixed, data in zip(self.v2_rolling_list, self.v2_fixed_list, self.v2_data_list):
             button = fixed >> 32
@@ -397,6 +411,20 @@ class TestSecplus(unittest.TestCase):
     def test_decode_wireline_robustness(self):
         for _ in range(self.TEST_CYCLES):
             random_code = bytes([0x55, 0x01, 0x00] + [random.randrange(256) for _ in range(16)])
+            try:
+                rolling, fixed, data = secplus.decode_wireline(random_code)
+                self.assertLess(rolling, 2**28)
+                self.assertLess(fixed, 2**40)
+                self.assertLess(data, 2**32)
+            except ValueError:
+                pass
+
+        for _ in range(self.TEST_CYCLES):
+            rolling = random.randrange(2**28)
+            fixed = random.randrange(2**40)
+            data = random.randrange(2**32)
+            code = secplus.encode_wireline(rolling, fixed, data)
+            random_code = bytes(b if random.random() > 1/19 else random.randrange(256) for b in code)
             try:
                 rolling, fixed, data = secplus.decode_wireline(random_code)
                 self.assertLess(rolling, 2**28)
