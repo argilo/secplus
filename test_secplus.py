@@ -437,6 +437,15 @@ class TestSecplus(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, r"Data must be less than 2\^32"):
             secplus.encode_wireline(rolling, fixed, data)
 
+    def test_decode_wireline_bits_8_9(self):
+        for code in self.wireline_codes:
+            for byte_offset in (4, 12):
+                for bit_mask in (0x40, 0x80, 0xc0):
+                    broken_code = code.copy()
+                    broken_code[byte_offset] |= bit_mask
+                    with self.assertRaisesRegex(ValueError, "Unexpected values for bits 8 and 9"):
+                        secplus.decode_wireline(bytes(broken_code))
+
     def test_encode_wireline(self):
         for code, rolling, fixed, data in zip(self.wireline_codes, self.wireline_rolling_list,
                                               self.wireline_fixed_list, self.wireline_data_list):
