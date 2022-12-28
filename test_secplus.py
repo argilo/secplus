@@ -92,11 +92,12 @@ class TestSecplus(unittest.TestCase):
     01000100001011011000011010100011110101111001001000001001101011010100100001110010010110011010011110010011110110011110010010010011
     01100110101100101000101100011101111010110001001000000001010101100100001010001101101011111101101011101101001001101001111101111101
     01100110010110110010110111000110100001101010010011011010000111110100000000010110100010100110100010110100010010110010110110110110
+    01010001000000101100110011110100001010111111011111111111011111110101100000011110110111010110110011110110110010011111110110110110
     """.split()
 
-    v2_rolling_list = list(range(240124710, 240124726)) + list(range(240129675, 240129678))
-    v2_fixed_list = [0x1074c58200]*4 + [0x0e74c58200]*4 + [0x0f74c58200]*4 + [0x1174c58200]*4 + [0xfa36d91000]*3
-    v2_data_list = [None]*16 + [0xfb03d000]*3
+    v2_rolling_list = list(range(240124710, 240124726)) + list(range(240129675, 240129679))
+    v2_fixed_list = [0x1074c58200]*4 + [0x0e74c58200]*4 + [0x0f74c58200]*4 + [0x1174c58200]*4 + [0xfa36d91000]*3 + [0xe336d91000]
+    v2_data_list = [None]*16 + [0xfb03d000]*3 + [0x3000]
 
     wireline_codes = [
         [0x55, 0x1, 0x0, 0x5a, 0x3a, 0x32, 0xc7, 0x29, 0xb2, 0xc9, 0x65, 0x8a, 0x28, 0xb3, 0xc6, 0x35, 0x52, 0x4e, 0x79],
@@ -391,8 +392,10 @@ class TestSecplus(unittest.TestCase):
             button = fixed >> 32
             remote_id = fixed & 0xffffffff
             pretty = f"Security+ 2.0:  rolling={rolling}  fixed={fixed}  (button={button} remote_id={remote_id})"
-            if data is not None:
+            if data == 0xfb03d000:
                 pretty += f"  data={data}  (pin=1019 data3=13 data4=0)"
+            elif data == 0x3000:
+                pretty += f"  data={data}  (pin=enter)"
             pretty_out = secplus.pretty_v2(rolling, fixed, data)
             self.assertEqual(pretty, pretty_out)
 
