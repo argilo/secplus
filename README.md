@@ -57,9 +57,9 @@ Transmissions use on-off keying, with an alphabet of three symbols (0, 1, 2) cor
 * 1: 1ms off, 1ms on
 * 2: 0.5ms off, 1.5ms on
 
-The payload consists of 40 symbols, which are transmited in two frames of 20 symbols each. A single synchronization symbol is prepended to each frame: 0 for the first frame, and 2 for the second. 58ms of silence occurs after each frame, but the receiver I tested with accepts as little as 20ms. Remotes repeat the frame pair a minimum of four times, or continuously for as long as the button is held down.
+The payload consists of 40 symbols, which are transmitted in two frames of 20 symbols each. A single synchronization symbol is prepended to each frame: 0 for the first frame, and 2 for the second. 58ms of silence occurs after each frame, but the receiver I tested with accepts as little as 20ms. Remotes repeat the frame pair a minimum of four times, or continuously for as long as the button is held down.
 
-The payload consists of a rolling code and a fixed code, each appoximately 32 bits long. These values are combined and encoded into 40 ternary symbols for transmission. Despite being described as such in patents, the encoding is not encryption as there is no key.
+The payload consists of a rolling code and a fixed code, each approximately 32 bits long. These values are combined and encoded into 40 ternary symbols for transmission. Despite being described as such in patents, the encoding is not encryption as there is no key.
 
 The rolling code is incremented by three each time the remote button is pressed, and the fixed code remains the same. PIN pads use half of the fixed code symbols to transmit the four-digit PIN that was entered. Receivers accept codes so long as the fixed code corresponds to a programmed remote, and the current rolling code is less than 3072 above the last rolling code. Receivers will also accept any two consecutive rolling codes (and adjust the stored rolling code accordingly) so long as the two codes are not within 1024 below the last rolling code.
 
