@@ -5,7 +5,7 @@ This project is a software implementation of the Security+ and Security+ 2.0 rol
 
 ## Requirements
 
-* GNU Radio 3.8
+* GNU Radio 3.8 or later
 * gr-osmosdr
 * SDR hardware supported by gr-osmosdr (e.g. RTL-SDR, HackRF)
 
@@ -68,8 +68,8 @@ The rolling code is incremented by three each time the remote button is pressed,
 Security+ 2.0 is an updated (and incompatible) version released around 2011. Many of the details are described in
 [US patent application US20110317835A1](https://patents.google.com/patent/US20110317835A1/), and the remainder was determined by analyzing packets transmitted by a Security+ 2.0 remote.
 
-The payload consists of 80 bits, which are split into two 40-bit halves transmitted in separate packets. Each packet consists of a 21-bit preamble, a single synchronization bit (which is 0 for the first packet, and 1 for the second), and 40 payload bits. Each 62-bit packet is Manchester encoded (with a falling edge representing 0, and a rising edge representing 1).
+The payload consists of 80 or 128 bits, which are split into two 40- or 64-bit halves transmitted in separate packets. Each packet consists of a 20-bit preamble, a two-bit frame ID (which is 00 for the first packet, and 01 for the second), and 40 or 64 payload bits. Each packet is Manchester encoded (with a falling edge representing 0, and a rising edge representing 1).
 
-The fixed code is 40 bits long, and the rolling code is 28 bits. The rolling code is "encrypted" by reversing its binary bits, then converting the resulting number to base 3. Each base-3 digit is converted to 2 binary bits. The fixed code and encrypted rolling code are then interleaved. Finally, the bits are permuted and inverted, with the permutation and inversion pattern depending on the values of particular base-3 digits of the encrypted rolling code.
+The fixed code is 40 bits long, and the rolling code is 28 bits. The longer 64-bit packets also carry 32 supplemental data bits; PIN pads use these bits to convey the PIN entered by the user. The rolling code is "encrypted" by reversing its binary bits, then converting the resulting number to base 3. Each base-3 digit is converted to 2 binary bits. The fixed code and encrypted rolling code are then interleaved. Finally, the bits are permuted and inverted, with the permutation and inversion pattern depending on the values of particular base-3 digits of the encrypted rolling code.
 
-The rolling code increases by one with each button press, and appears to be shared across all buttons on a given remote.
+The rolling code increases by one with each button press, and is sometimes shared across all buttons on a given remote.
