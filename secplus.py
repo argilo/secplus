@@ -77,7 +77,7 @@ def decode(code):
         fixed = (fixed * 3) + digit
         acc += digit
 
-    rolling = int("{0:032b}".format(rolling)[::-1], 2)
+    rolling = int(f"{rolling:032b}"[::-1], 2)
     return rolling, fixed
 
 
@@ -125,11 +125,11 @@ def _decode_v2_rolling(rolling1, rolling2):
         rolling = (rolling * 3) + digit
     if rolling >= 2**28:
         raise ValueError("Rolling code was not in expected range")
-    return int("{0:028b}".format(rolling)[::-1], 2)
+    return int(f"{rolling:028b}"[::-1], 2)
 
 
 def _encode_v2_rolling(rolling):
-    rolling = int("{0:028b}".format(rolling)[::-1], 2)
+    rolling = int(f"{rolling:028b}"[::-1], 2)
     rolling_base3 = [0] * 18
     for i in range(17, -1, -1):
         rolling_base3[i] = rolling % 3
@@ -257,7 +257,7 @@ def encode(rolling, fixed):
     if fixed >= 3**20:
         raise ValueError("Fixed code must be less than 3^20")
 
-    rolling = int("{0:032b}".format(rolling & 0xfffffffe)[::-1], 2)
+    rolling = int(f"{rolling & 0xfffffffe:032b}"[::-1], 2)
     rolling_base3 = [0] * 20
     fixed_base3 = [0] * 20
     for i in range(19, -1, -1):
@@ -351,7 +351,7 @@ def encode_v2(rolling, fixed, data=None):
 
     rolling1, rolling2 = _encode_v2_rolling(rolling)
 
-    fixed_bits = [int(bit) for bit in "{0:040b}".format(fixed)]
+    fixed_bits = [int(bit) for bit in f"{fixed:040b}"]
     fixed1 = fixed_bits[:20]
     fixed2 = fixed_bits[20:]
 
@@ -359,7 +359,7 @@ def encode_v2(rolling, fixed, data=None):
         data1 = None
         data2 = None
     else:
-        data_bits = [int(bit) for bit in "{0:032b}".format(data)]
+        data_bits = [int(bit) for bit in f"{data:032b}"]
         data1 = data_bits[:16]
         data2 = data_bits[16:]
 
@@ -386,11 +386,11 @@ def encode_wireline(rolling, fixed, data):
 
     rolling1, rolling2 = _encode_v2_rolling(rolling)
 
-    fixed_bits = [int(bit) for bit in "{0:040b}".format(fixed)]
+    fixed_bits = [int(bit) for bit in f"{fixed:040b}"]
     fixed1 = fixed_bits[:20]
     fixed2 = fixed_bits[20:]
 
-    data_bits = [int(bit) for bit in "{0:032b}".format(data)]
+    data_bits = [int(bit) for bit in f"{data:032b}"]
     data1 = data_bits[:16]
     data2 = data_bits[16:]
 
@@ -435,7 +435,7 @@ def encode_v2_manchester(rolling, fixed, data=None):
 
 def pretty(rolling, fixed):
     """Pretty-print a Security+ rolling and fixed code"""
-    return "Security+:  rolling={0}  fixed={1}  ({2})".format(rolling, fixed, _fixed_pretty(fixed))
+    return f"Security+:  rolling={rolling}  fixed={fixed}  ({_fixed_pretty(fixed)})"
 
 
 def _fixed_pretty(fixed):
@@ -443,14 +443,14 @@ def _fixed_pretty(fixed):
     id0 = (fixed // 3) % 3
     id1 = (fixed // 3**2) % 3
 
-    result = "id1={0} id0={1} switch={2}".format(id1, id0, switch_id)
+    result = f"id1={id1} id0={id0} switch={switch_id}"
 
     if id1 == 0:
         pad_id = (fixed // 3**3) % (3**7)
-        result += " pad_id={0}".format(pad_id)
+        result += f" pad_id={pad_id}"
         pin = (fixed // 3**10) % (3**9)
         if 0 <= pin <= 9999:
-            result += " pin={0:04}".format(pin)
+            result += f" pin={pin:04}"
         elif 10000 <= pin <= 11029:
             result += " pin=enter"
         pin_suffix = (fixed // 3**19) % 3
@@ -460,28 +460,28 @@ def _fixed_pretty(fixed):
             result += "*"
     else:
         remote_id = (fixed // 3**3)
-        result += " remote_id={0}".format(remote_id)
+        result += f" remote_id={remote_id}"
         if switch_id == 0:
             button = "middle"
         elif switch_id == 1:
             button = "left"
         else:
             button = "right"
-        result += " button={0}".format(button)
+        result += f" button={button}"
 
     return result
 
 
 def pretty_v2(rolling, fixed, data=None):
     """Pretty-print a Security+ 2.0 rolling code, fixed code, and data"""
-    pretty = "Security+ 2.0:  rolling={0}  fixed={1}  ({2})".format(rolling, fixed, _fixed_pretty_v2(fixed))
+    pretty = f"Security+ 2.0:  rolling={rolling}  fixed={fixed}  ({_fixed_pretty_v2(fixed)})"
     if data is not None:
-        pretty += "  data={0}  ({1})".format(data, _data_pretty_v2(data))
+        pretty += f"  data={data}  ({_data_pretty_v2(data)})"
     return pretty
 
 
 def _fixed_pretty_v2(fixed):
-    return "button={0} remote_id={1}".format(fixed >> 32, fixed & 0xffffffff)
+    return f"button={fixed >> 32} remote_id={fixed & 0xffffffff}"
 
 
 def _data_pretty_v2(data):
@@ -494,4 +494,4 @@ def _data_pretty_v2(data):
         return "pin=enter"
     else:
         pin = (data2 << 8) | data1
-        return "pin={0:04} data3={1} data4={2}".format(pin, data3, data4)
+        return f"pin={pin:04} data3={data3} data4={data4}"
