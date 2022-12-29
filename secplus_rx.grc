@@ -729,41 +729,45 @@ blocks:
       \       self,\n            name='Security+ 2.0 Decoder',\n\n            in_sig=[np.float32],\n\
       \            out_sig=[]\n        )\n        self.samp_rate = samp_rate\n   \
       \     self.threshold = threshold\n        self.last_sample = 0.0\n        self.last_edge\
-      \ = 0\n        self.buffer = []\n        self.last_pair = []\n        self.pair\
-      \ = []\n\n    def work(self, input_items, output_items):\n        for n, sample\
-      \ in enumerate(input_items[0]):\n            current_sample = self.nitems_read(0)\
-      \ + n\n            if self.last_sample < self.threshold <= sample:\n       \
-      \         # rising edge\n                self.process_edge(True, current_sample\
+      \ = 0\n        self.buffer = []\n        self.pair = [None, None]\n        self.pair_time\
+      \ = [None, None]\n\n    def work(self, input_items, output_items):\n       \
+      \ for n, sample in enumerate(input_items[0]):\n            current_sample =\
+      \ self.nitems_read(0) + n\n            if self.last_sample < self.threshold\
+      \ <= sample:\n                # rising edge\n                self.process_edge(True,\
+      \ current_sample - self.last_edge)\n                self.last_edge = current_sample\n\
+      \            elif self.last_sample >= self.threshold > sample:\n           \
+      \     # falling edge\n                self.process_edge(False, current_sample\
       \ - self.last_edge)\n                self.last_edge = current_sample\n     \
-      \       elif self.last_sample >= self.threshold > sample:\n                #\
-      \ falling edge\n                self.process_edge(False, current_sample - self.last_edge)\n\
-      \                self.last_edge = current_sample\n            if current_sample\
-      \ - self.last_edge >= 0.625e-3 * self.samp_rate:\n                self.buffer.append(0)\n\
-      \                self.buffer.append(0)\n                self.process_buffer()\n\
-      \                self.buffer = []\n            self.last_sample = sample\n \
-      \       return len(input_items[0])\n\n    def process_edge(self, rising, samples):\n\
-      \        if samples < 0.125e-3 * self.samp_rate:\n            self.buffer =\
-      \ []\n        elif samples < 0.375e-3 * self.samp_rate:\n            self.buffer.append(0\
-      \ if rising else 1)\n        elif samples < 0.625e-3 * self.samp_rate:\n   \
-      \         self.buffer.append(0 if rising else 1)\n            self.buffer.append(0\
-      \ if rising else 1)\n        else:\n            self.buffer = []\n\n    def\
-      \ process_buffer(self):\n        manchester = \"\".join(str(b) for b in self.buffer)\n\
-      \        start = manchester.find(\"1010101010101010101010101010101001010101\"\
-      )\n        if start == -1:\n            return\n\n        if manchester[start+44:start+48]\
+      \       if current_sample - self.last_edge >= 0.625e-3 * self.samp_rate:\n \
+      \               self.buffer.append(0)\n                self.buffer.append(0)\n\
+      \                self.process_buffer(current_sample)\n                self.buffer\
+      \ = []\n            self.last_sample = sample\n        return len(input_items[0])\n\
+      \n    def process_edge(self, rising, samples):\n        if samples < 0.125e-3\
+      \ * self.samp_rate:\n            self.buffer = []\n        elif samples < 0.375e-3\
+      \ * self.samp_rate:\n            self.buffer.append(0 if rising else 1)\n  \
+      \      elif samples < 0.625e-3 * self.samp_rate:\n            self.buffer.append(0\
+      \ if rising else 1)\n            self.buffer.append(0 if rising else 1)\n  \
+      \      else:\n            self.buffer = []\n\n    def process_buffer(self, current_sample):\n\
+      \        manchester = \"\".join(str(b) for b in self.buffer)\n        start\
+      \ = manchester.find(\"1010101010101010101010101010101001010101\")\n        if\
+      \ start == -1:\n            return\n\n        if manchester[start+44:start+48]\
       \ == \"1010\":\n            packet_length = 40\n        elif manchester[start+44:start+48]\
       \ == \"1001\":\n            packet_length = 64\n        else:\n            return\n\
       \n        manchester = manchester[start:start+44+(packet_length*2)]\n      \
       \  baseband = []\n        for i in range(0, len(manchester), 2):\n         \
       \   if manchester[i:i+2] == \"01\":\n                baseband.append(1)\n  \
       \          elif manchester[i:i+2] == \"10\":\n                baseband.append(0)\n\
-      \            else:\n                return\n\n        if baseband[20:22] ==\
-      \ [0, 0]:\n            self.pair = baseband[22:]\n        elif baseband[20:22]\
-      \ == [0, 1] and len(self.pair) == packet_length:\n            self.pair += baseband[22:]\n\
-      \n        if len(self.pair) == packet_length*2 and self.pair != self.last_pair:\n\
-      \            try:\n                rolling, fixed, data = secplus.decode_v2(self.pair)\n\
-      \                print(secplus.pretty_v2(rolling, fixed, data))\n          \
-      \      self.last_pair = self.pair\n            except ValueError:\n        \
-      \        pass\n"
+      \            else:\n                return\n        packet = baseband[22:]\n\
+      \n        if baseband[20:22] == [0, 0]:\n            frame_id = 0\n        elif\
+      \ baseband[20:22] == [0, 1]:\n            frame_id = 1\n        else:\n    \
+      \        return\n\n        self.pair_time[frame_id] = current_sample\n\n   \
+      \     if self.pair[frame_id] == packet:\n            return\n\n        self.pair[frame_id]\
+      \ = packet\n        \n        if (self.pair[frame_id ^ 1] is not None) and (len(self.pair[frame_id\
+      \ ^ 1]) == packet_length):\n            if self.pair_time[frame_id] - self.pair_time[frame_id\
+      \ ^ 1] < 0.35 * self.samp_rate:\n                try:\n                    rolling,\
+      \ fixed, data = secplus.decode_v2(self.pair[0] + self.pair[1])\n           \
+      \         print(secplus.pretty_v2(rolling, fixed, data))\n                except\
+      \ ValueError:\n                    pass\n"
     affinity: ''
     alias: ''
     comment: ''

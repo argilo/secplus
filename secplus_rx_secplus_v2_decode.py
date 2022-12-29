@@ -38,8 +38,8 @@ class blk(gr.sync_block):
         self.last_sample = 0.0
         self.last_edge = 0
         self.buffer = []
-        self.last_pair = []
-        self.pair = []
+        self.pair = [None, None]
+        self.pair_time = [None, None]
 
     def work(self, input_items, output_items):
         for n, sample in enumerate(input_items[0]):
@@ -55,7 +55,7 @@ class blk(gr.sync_block):
             if current_sample - self.last_edge >= 0.625e-3 * self.samp_rate:
                 self.buffer.append(0)
                 self.buffer.append(0)
-                self.process_buffer()
+                self.process_buffer(current_sample)
                 self.buffer = []
             self.last_sample = sample
         return len(input_items[0])
@@ -71,7 +71,7 @@ class blk(gr.sync_block):
         else:
             self.buffer = []
 
-    def process_buffer(self):
+    def process_buffer(self, current_sample):
         manchester = "".join(str(b) for b in self.buffer)
         start = manchester.find("1010101010101010101010101010101001010101")
         if start == -1:
@@ -93,16 +93,26 @@ class blk(gr.sync_block):
                 baseband.append(0)
             else:
                 return
+        packet = baseband[22:]
 
         if baseband[20:22] == [0, 0]:
-            self.pair = baseband[22:]
-        elif baseband[20:22] == [0, 1] and len(self.pair) == packet_length:
-            self.pair += baseband[22:]
+            frame_id = 0
+        elif baseband[20:22] == [0, 1]:
+            frame_id = 1
+        else:
+            return
 
-        if len(self.pair) == packet_length*2 and self.pair != self.last_pair:
-            try:
-                rolling, fixed, data = secplus.decode_v2(self.pair)
-                print(secplus.pretty_v2(rolling, fixed, data))
-                self.last_pair = self.pair
-            except ValueError:
-                pass
+        self.pair_time[frame_id] = current_sample
+
+        if self.pair[frame_id] == packet:
+            return
+
+        self.pair[frame_id] = packet
+        
+        if (self.pair[frame_id ^ 1] is not None) and (len(self.pair[frame_id ^ 1]) == packet_length):
+            if self.pair_time[frame_id] - self.pair_time[frame_id ^ 1] < 0.35 * self.samp_rate:
+                try:
+                    rolling, fixed, data = secplus.decode_v2(self.pair[0] + self.pair[1])
+                    print(secplus.pretty_v2(rolling, fixed, data))
+                except ValueError:
+                    pass
