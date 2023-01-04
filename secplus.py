@@ -497,22 +497,33 @@ def pretty_v2(rolling, fixed, data=None):
     """Pretty-print a Security+ 2.0 rolling code, fixed code, and data"""
     pretty = f"Security+ 2.0:  rolling={rolling}  fixed={fixed}  ({_fixed_pretty_v2(fixed)})"
     if data is not None:
-        pretty += f"  data={data}  ({_data_pretty_v2(data)})"
+        pretty += f"  data={data}  ({_data_pretty_v2(fixed, data)})"
     return pretty
 
 
 def _fixed_pretty_v2(fixed):
-    return f"button={fixed >> 32} remote_id={fixed & 0xffffffff}"
+    button = (fixed >> 32) & 0xf
+    remote_id = fixed & 0xf0ffffffff
+    return f"button={button} remote_id=0x{remote_id:010x}"
 
 
-def _data_pretty_v2(data):
-    data1 = data >> 24
-    data2 = (data >> 16) & 0xff
-    data3 = (data >> 12) & 0xf
-    data4 = data & 0xfff
-    pin = (data2 << 8) | data1
-    if data3 == 3:
-        return "pin=enter"
+def _data_pretty_v2(fixed, data):
+    button = (fixed >> 32) & 0xf
+
+    byte1 = data >> 24
+    byte2 = (data >> 16) & 0xff
+    pin = (byte2 << 8) | byte1
+
+    tail = data & 0xfff
+
+    if button == 3:
+        return f"pin=enter tail=0x{tail:03x}"
     else:
-        pin = (data2 << 8) | data1
-        return f"pin={pin:04} data3={data3} data4={data4}"
+        if button == 1:
+            suffix = "*"
+        elif button == 2:
+            suffix = "#"
+        else:
+            suffix = ""
+
+        return f"pin={pin:04}{suffix} tail=0x{tail:03x}"

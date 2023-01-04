@@ -92,12 +92,15 @@ class TestSecplus(unittest.TestCase):
     01000100001011011000011010100011110101111001001000001001101011010100100001110010010110011010011110010011110110011110010010010011
     01100110101100101000101100011101111010110001001000000001010101100100001010001101101011111101101011101101001001101001111101111101
     01100110010110110010110111000110100001101010010011011010000111110100000000010110100010100110100010110100010010110010110110110110
-    01010001000000101100110011110100001010111111011111111111011111110101100000011110110111010110110011110110110010011111110110110110
+    01010001000000101100110011110110011010111101001101101101010100100101100000011110110111010110110011110110110011011111110110110110
+    01010000101001000101011110011011100111010000100000000000011101000101010001001010010001011010011000010011010001000011010010010011
+    01011000010011011110000000100010000100000111111110110110100011010100101010001101100001101101101001101101101001100001100101100101
+    01011000001011011110001001101011011101001100100101101101101101100100100000010111110010110110110011110111110110011010110110110110
     """.split()
 
-    v2_rolling_list = list(range(240124710, 240124726)) + list(range(240129675, 240129679))
-    v2_fixed_list = [0x1074c58200]*4 + [0x0e74c58200]*4 + [0x0f74c58200]*4 + [0x1174c58200]*4 + [0xfa36d91000]*3 + [0xe336d91000]
-    v2_data_list = [None]*16 + [0xfb03d000]*3 + [0x3000]
+    v2_rolling_list = list(range(240124710, 240124726)) + list(range(240129675, 240129682))
+    v2_fixed_list = [0x1074c58200]*4 + [0x0e74c58200]*4 + [0x0f74c58200]*4 + [0x1174c58200]*4 + [0xfa36d91000]*3 + [0xe036d91000, 0xe136d91000, 0xe236d91000, 0xe336d91000]
+    v2_data_list = [None]*16 + [0xfb03d000]*3 + [0xfb037000, 0xfb036000, 0xfb035000, 0x3000]
 
     wireline_codes = [
         [0x55, 0x1, 0x0, 0x5a, 0x3a, 0x32, 0xc7, 0x29, 0xb2, 0xc9, 0x65, 0x8a, 0x28, 0xb3, 0xc6, 0x35, 0x52, 0x4e, 0x79],
@@ -389,13 +392,18 @@ class TestSecplus(unittest.TestCase):
 
     def test_pretty_v2(self):
         for rolling, fixed, data in zip(self.v2_rolling_list, self.v2_fixed_list, self.v2_data_list):
-            button = fixed >> 32
-            remote_id = fixed & 0xffffffff
-            pretty = f"Security+ 2.0:  rolling={rolling}  fixed={fixed}  (button={button} remote_id={remote_id})"
-            if data == 0xfb03d000:
-                pretty += f"  data={data}  (pin=1019 data3=13 data4=0)"
-            elif data == 0x3000:
-                pretty += f"  data={data}  (pin=enter)"
+            button = (fixed >> 32) & 0xf
+            remote_id = fixed & 0xf0ffffffff
+            pretty = f"Security+ 2.0:  rolling={rolling}  fixed={fixed}  (button={button} remote_id=0x{remote_id:010x})"
+            if data is not None:
+                if button == 1:
+                    pretty += f"  data={data}  (pin=1019* tail=0x000)"
+                elif button == 2:
+                    pretty += f"  data={data}  (pin=1019# tail=0x000)"
+                elif button == 3:
+                    pretty += f"  data={data}  (pin=enter tail=0x000)"
+                else:
+                    pretty += f"  data={data}  (pin=1019 tail=0x000)"
             pretty_out = secplus.pretty_v2(rolling, fixed, data)
             self.assertEqual(pretty, pretty_out)
 
