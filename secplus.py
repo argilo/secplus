@@ -182,6 +182,23 @@ def _decode_v2_half(code):
     return _decode_v2_half_parts(packet_type, indicator, payload)
 
 
+def _v2_calc_parity(fixed, data):
+    data &= 0xffff0fff
+    parity = (fixed >> 32) & 0xf
+    for offset in range(0, 32, 4):
+        parity ^= ((data >> offset) & 0xf)
+    data |= (parity << 12)
+    return data
+
+
+def _v2_check_parity(fixed, data):
+    parity = (fixed >> 32) & 0xf
+    for offset in range(0, 32, 4):
+        parity ^= ((data >> offset) & 0xf)
+    if parity != 0:
+        raise ValueError("Parity bits are incorrect")
+
+
 def decode_v2(code):
     """Decode a Security+ 2.0 transmission and return the rolling code, fixed
     code, and data.
@@ -201,6 +218,7 @@ def decode_v2(code):
         data = None
     else:
         data = int("".join(str(bit) for bit in data1 + data2), 2)
+        _v2_check_parity(fixed, data)
     return rolling, fixed, data
 
 
@@ -239,6 +257,7 @@ def decode_wireline(code):
     rolling = _decode_v2_rolling(rolling1, rolling2)
     fixed = int("".join(str(bit) for bit in fixed1 + fixed2), 2)
     data = int("".join(str(bit) for bit in data1 + data2), 2)
+    _v2_check_parity(fixed, data)
     return rolling, fixed, data
 
 
@@ -359,6 +378,7 @@ def encode_v2(rolling, fixed, data=None):
         data1 = None
         data2 = None
     else:
+        data = _v2_calc_parity(fixed, data)
         data_bits = [int(bit) for bit in f"{data:032b}"]
         data1 = data_bits[:16]
         data2 = data_bits[16:]
@@ -390,6 +410,7 @@ def encode_wireline(rolling, fixed, data):
     fixed1 = fixed_bits[:20]
     fixed2 = fixed_bits[20:]
 
+    data = _v2_calc_parity(fixed, data)
     data_bits = [int(bit) for bit in f"{data:032b}"]
     data1 = data_bits[:16]
     data2 = data_bits[16:]

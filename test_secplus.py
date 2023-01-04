@@ -232,7 +232,7 @@ class TestSecplus(unittest.TestCase):
 
             self.assertEqual(rolling, rolling_out)
             self.assertEqual(fixed, fixed_out)
-            self.assertEqual(data, data_out)
+            self.assertEqual(data & 0xffff0fff, data_out & 0xffff0fff)
 
     def test_encode_v2_rolling_limit(self):
         rolling = 2**28
@@ -409,7 +409,7 @@ class TestSecplus(unittest.TestCase):
 
             self.assertEqual(rolling, rolling_out)
             self.assertEqual(fixed, fixed_out)
-            self.assertEqual(data, data_out)
+            self.assertEqual(data & 0xffff0fff, data_out & 0xffff0fff)
 
     def test_decode_wireline_robustness(self):
         for _ in range(self.TEST_CYCLES):
