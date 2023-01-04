@@ -495,9 +495,9 @@ def _fixed_pretty(fixed):
 
 def pretty_v2(rolling, fixed, data=None):
     """Pretty-print a Security+ 2.0 rolling code, fixed code, and data"""
-    pretty = f"Security+ 2.0:  rolling={rolling}  fixed={fixed}  ({_fixed_pretty_v2(fixed)})"
+    pretty = f"Security+ 2.0:  rolling=0x{rolling:07x}  fixed=0x{fixed:010x}  ({_fixed_pretty_v2(fixed)})"
     if data is not None:
-        pretty += f"  data={data}  ({_data_pretty_v2(fixed, data)})"
+        pretty += f"  data=0x{data:08x}  ({_data_pretty_v2(fixed, data)})"
     return pretty
 
 

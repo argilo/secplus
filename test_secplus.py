@@ -394,16 +394,16 @@ class TestSecplus(unittest.TestCase):
         for rolling, fixed, data in zip(self.v2_rolling_list, self.v2_fixed_list, self.v2_data_list):
             button = (fixed >> 32) & 0xf
             remote_id = fixed & 0xf0ffffffff
-            pretty = f"Security+ 2.0:  rolling={rolling}  fixed={fixed}  (button={button} remote_id=0x{remote_id:010x})"
+            pretty = f"Security+ 2.0:  rolling=0x{rolling:07x}  fixed=0x{fixed:010x}  (button={button} remote_id=0x{remote_id:010x})"
             if data is not None:
                 if button == 1:
-                    pretty += f"  data={data}  (pin=1019* tail=0x000)"
+                    pretty += f"  data=0x{data:08x}  (pin=1019* tail=0x000)"
                 elif button == 2:
-                    pretty += f"  data={data}  (pin=1019# tail=0x000)"
+                    pretty += f"  data=0x{data:08x}  (pin=1019# tail=0x000)"
                 elif button == 3:
-                    pretty += f"  data={data}  (pin=enter tail=0x000)"
+                    pretty += f"  data=0x{data:08x}  (pin=enter tail=0x000)"
                 else:
-                    pretty += f"  data={data}  (pin=1019 tail=0x000)"
+                    pretty += f"  data=0x{data:08x}  (pin=1019 tail=0x000)"
             pretty_out = secplus.pretty_v2(rolling, fixed, data)
             self.assertEqual(pretty, pretty_out)
 
