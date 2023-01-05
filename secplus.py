@@ -199,6 +199,17 @@ def _v2_check_parity(fixed, data):
         raise ValueError("Parity bits are incorrect")
 
 
+def _v2_combine_halves(rolling1, rolling2, fixed1, fixed2, data1, data2):
+    rolling = _decode_v2_rolling(rolling1, rolling2)
+    fixed = int("".join(str(bit) for bit in fixed1 + fixed2), 2)
+    if data1 is None:
+        data = None
+    else:
+        data = int("".join(str(bit) for bit in data1 + data2), 2)
+        _v2_check_parity(fixed, data)
+    return rolling, fixed, data
+
+
 def decode_v2(code):
     """Decode a Security+ 2.0 transmission and return the rolling code, fixed
     code, and data.
@@ -211,15 +222,7 @@ def decode_v2(code):
     half_len = len(code) // 2
     rolling1, fixed1, data1 = _decode_v2_half(code[:half_len])
     rolling2, fixed2, data2 = _decode_v2_half(code[half_len:])
-
-    rolling = _decode_v2_rolling(rolling1, rolling2)
-    fixed = int("".join(str(bit) for bit in fixed1 + fixed2), 2)
-    if data1 is None:
-        data = None
-    else:
-        data = int("".join(str(bit) for bit in data1 + data2), 2)
-        _v2_check_parity(fixed, data)
-    return rolling, fixed, data
+    return _v2_combine_halves(rolling1, rolling2, fixed1, fixed2, data1, data2)
 
 
 def _decode_wireline_half(code):
@@ -253,12 +256,7 @@ def decode_wireline(code):
 
     rolling1, fixed1, data1 = _decode_wireline_half(code_bits[:64])
     rolling2, fixed2, data2 = _decode_wireline_half(code_bits[64:])
-
-    rolling = _decode_v2_rolling(rolling1, rolling2)
-    fixed = int("".join(str(bit) for bit in fixed1 + fixed2), 2)
-    data = int("".join(str(bit) for bit in data1 + data2), 2)
-    _v2_check_parity(fixed, data)
-    return rolling, fixed, data
+    return _v2_combine_halves(rolling1, rolling2, fixed1, fixed2, data1, data2)
 
 
 def encode(rolling, fixed):
