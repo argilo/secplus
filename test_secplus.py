@@ -260,6 +260,16 @@ class TestSecplus(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, r"Data must be less than 2\^32"):
             secplus.encode_v2(rolling, fixed, data)
 
+    def test_encode_v2_parity(self):
+        for code, rolling, fixed, data in zip(self.v2_codes, self.v2_rolling_list,
+                                              self.v2_fixed_list, self.v2_data_list):
+            if data is None:
+                continue
+            code = [int(bit) for bit in code]
+            for parity_errors in range(1, 16):
+                code_out = secplus.encode_v2(rolling, fixed, data ^ (parity_errors << 12))
+            self.assertEqual(code, code_out)
+
     def test_encode_v2(self):
         for code, rolling, fixed, data in zip(self.v2_codes, self.v2_rolling_list,
                                               self.v2_fixed_list, self.v2_data_list):
@@ -485,6 +495,14 @@ class TestSecplus(unittest.TestCase):
                     broken_code[byte_offset] |= bit_mask
                     with self.assertRaisesRegex(ValueError, "Unexpected values for bits 8 and 9"):
                         secplus.decode_wireline(bytes(broken_code))
+
+    def test_encode_wireline_parity(self):
+        for code, rolling, fixed, data in zip(self.wireline_codes, self.wireline_rolling_list,
+                                              self.wireline_fixed_list, self.wireline_data_list):
+            code = bytes(code)
+            for parity_errors in range(1, 16):
+                code_out = secplus.encode_wireline(rolling, fixed, data ^ (parity_errors << 12))
+            self.assertEqual(code, code_out)
 
     def test_encode_wireline(self):
         for code, rolling, fixed, data in zip(self.wireline_codes, self.wireline_rolling_list,
