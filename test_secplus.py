@@ -375,6 +375,16 @@ class TestSecplus(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Rolling code was not in expected range"):
             secplus.decode_v2(broken_code)
 
+    def test_decode_v2_incorrect_parity(self):
+        code = "01001010011101101001101100011110100000111001001011001010001101110100101001100001001100000000001100000000100100001100001000000001"
+        code = [int(bit) for bit in code]
+
+        for bit in [22, 25, 28, 31] + list(range(40, 64, 3)) + list(range(41, 64, 3)) + list(range(104, 128, 3)) + list(range(105, 128, 3)):
+            broken_code = code.copy()
+            broken_code[bit] ^= 1
+            with self.assertRaisesRegex(ValueError, "Parity bits are incorrect"):
+                secplus.decode_v2(broken_code)
+
     def test_decode_v2_robustness(self):
         for _ in range(self.test_cycles):
             random_code = [random.randrange(2) for _ in range(random.choice([80, 128]))]
