@@ -18,13 +18,14 @@
 # along with secplus.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import os
 import random
 import unittest
 import secplus
 
 
 class TestSecplus(unittest.TestCase):
-    TEST_CYCLES = 20000
+    test_cycles = int(os.getenv("TEST_CYCLES", default=1000))
 
     v1_codes = """
     0010000211122102222101112211012101001110
@@ -132,7 +133,7 @@ class TestSecplus(unittest.TestCase):
     ]
 
     def test_encode_decode(self):
-        for _ in range(self.TEST_CYCLES):
+        for _ in range(self.test_cycles):
             rolling = random.randrange(2**32) & 0xfffffffe
             fixed = random.randrange(3**20)
 
@@ -193,7 +194,7 @@ class TestSecplus(unittest.TestCase):
             self.assertEqual(fixed, fixed_out)
 
     def test_decode_robustness(self):
-        for _ in range(self.TEST_CYCLES):
+        for _ in range(self.test_cycles):
             random_code = [random.randrange(3) for _ in range(40)]
             rolling, fixed = secplus.decode(random_code)
             self.assertLess(rolling, 2**32)
@@ -215,7 +216,7 @@ class TestSecplus(unittest.TestCase):
             self.assertEqual(pretty, pretty_out)
 
     def test_encode_v2_decode_v2(self):
-        for _ in range(self.TEST_CYCLES):
+        for _ in range(self.test_cycles):
             rolling = random.randrange(2**28)
             fixed = random.randrange(2**40)
 
@@ -226,7 +227,7 @@ class TestSecplus(unittest.TestCase):
             self.assertIsNone(data_out)
 
     def test_encode_v2_decode_v2_with_data(self):
-        for _ in range(self.TEST_CYCLES):
+        for _ in range(self.test_cycles):
             rolling = random.randrange(2**28)
             fixed = random.randrange(2**40)
             data = random.randrange(2**32)
@@ -365,7 +366,7 @@ class TestSecplus(unittest.TestCase):
             secplus.decode_v2(broken_code)
 
     def test_decode_v2_robustness(self):
-        for _ in range(self.TEST_CYCLES):
+        for _ in range(self.test_cycles):
             random_code = [random.randrange(2) for _ in range(random.choice([80, 128]))]
             try:
                 rolling, fixed, data = secplus.decode_v2(random_code)
@@ -376,7 +377,7 @@ class TestSecplus(unittest.TestCase):
             except ValueError:
                 pass
 
-        for _ in range(self.TEST_CYCLES):
+        for _ in range(self.test_cycles):
             rolling = random.randrange(2**28)
             fixed = random.randrange(2**40)
             data = random.randrange(2**32)
@@ -408,7 +409,7 @@ class TestSecplus(unittest.TestCase):
             self.assertEqual(pretty, pretty_out)
 
     def test_encode_wireline_decode_wireline(self):
-        for _ in range(self.TEST_CYCLES):
+        for _ in range(self.test_cycles):
             rolling = random.randrange(2**28)
             fixed = random.randrange(2**40)
             data = random.randrange(2**32)
@@ -420,7 +421,7 @@ class TestSecplus(unittest.TestCase):
             self.assertEqual(data & 0xffff0fff, data_out & 0xffff0fff)
 
     def test_decode_wireline_robustness(self):
-        for _ in range(self.TEST_CYCLES):
+        for _ in range(self.test_cycles):
             random_code = bytes([0x55, 0x01, 0x00] + [random.randrange(256) for _ in range(16)])
             try:
                 rolling, fixed, data = secplus.decode_wireline(random_code)
@@ -430,7 +431,7 @@ class TestSecplus(unittest.TestCase):
             except ValueError:
                 pass
 
-        for _ in range(self.TEST_CYCLES):
+        for _ in range(self.test_cycles):
             rolling = random.randrange(2**28)
             fixed = random.randrange(2**40)
             data = random.randrange(2**32)

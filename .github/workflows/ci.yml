@@ -17,4 +17,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       - name: Test
+        env:
+          TEST_CYCLES: 50000
         run: ./test_secplus.py
