@@ -66,7 +66,7 @@ The rolling code is incremented by three each time the remote button is pressed,
 ### Security+ 2.0
 
 Security+ 2.0 is an updated (and incompatible) version released around 2011. Many of the details are described in
-[US patent application US20110317835A1](https://patents.google.com/patent/US20110317835A1/), and the remainder was determined by analyzing packets transmitted by a Security+ 2.0 remote.
+[US patent application US20110317835A1](https://patents.google.com/patent/US20110317835A1/), and the remainder was determined by analyzing packets transmitted by Security+ 2.0 remotes and wireline devices.
 
 The payload consists of 80 or 128 bits, which are split into two 40- or 64-bit halves transmitted in separate packets. Each packet consists of a 20-bit preamble, a two-bit frame ID (which is 00 for the first packet, and 01 for the second), and 40 or 64 payload bits. Each packet is Manchester encoded (with a falling edge representing 0, and a rising edge representing 1).
 
