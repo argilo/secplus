@@ -254,8 +254,9 @@ def decode_wireline(code):
         for bit in range(7, -1, -1):
             code_bits.append((b >> bit) & 1)
 
-    rolling1, fixed1, data1 = _decode_wireline_half(code_bits[:64])
-    rolling2, fixed2, data2 = _decode_wireline_half(code_bits[64:])
+    half_len = len(code_bits) // 2
+    rolling1, fixed1, data1 = _decode_wireline_half(code_bits[:half_len])
+    rolling2, fixed2, data2 = _decode_wireline_half(code_bits[half_len:])
     return _v2_combine_halves(rolling1, rolling2, fixed1, fixed2, data1, data2)
 
 
