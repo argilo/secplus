@@ -23,6 +23,7 @@ options:
     sizing_mode: fixed
     thread_safe_setters: ''
     title: ''
+    window_size: (1000,1000)
   states:
     bus_sink: false
     bus_source: false
@@ -439,7 +440,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [344, 244.0]
+    coordinate: [304, 244.0]
     rotation: 180
     state: enabled
 - name: rolling
@@ -474,7 +475,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [560, 172.0]
+    coordinate: [568, 172.0]
     rotation: 0
     state: enabled
 
@@ -487,3 +488,4 @@ connections:
 
 metadata:
   file_format: 1
+  grc_version: 3.10.5.0
