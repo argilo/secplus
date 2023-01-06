@@ -37,8 +37,13 @@ The rolling code should be at least 2 higher than the previously transmitted rol
 
 ### Transmitting Security+ 2.0:
 
+Rolling and fixed codes only:
 ```
-$ ./secplus_v2_tx.py --freq 315000000 --rolling 240124685 --fixed 70678577664
+$ ./secplus_v2_tx.py --freq 315000000 --rolling 0xe50030d --fixed 0x1074c58200
+```
+With optional supplemental data (e.g. PIN):
+```
+$ ./secplus_v2_tx.py --freq 315000000 --rolling 0xe50030d --fixed 0x1074c58200 --data 0xd204b000
 ```
 The rolling code should be at least 1 higher than the previously transmitted rolling code.
 
