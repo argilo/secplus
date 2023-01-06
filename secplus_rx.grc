@@ -124,7 +124,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [832, 184.0]
+    coordinate: [856, 184.0]
     rotation: 0
     state: enabled
 - name: blocks_rotator_cc_0
@@ -141,7 +141,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [416, 168.0]
+    coordinate: [432, 168.0]
     rotation: 0
     state: enabled
 - name: import_0
@@ -628,7 +628,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [648, 156.0]
+    coordinate: [664, 156.0]
     rotation: 0
     state: enabled
 - name: rational_resampler_xxx_1
