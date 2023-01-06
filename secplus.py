@@ -526,3 +526,75 @@ def _data_pretty_v2(fixed, data):
             suffix = ""
 
         return f"pin={pin:04}{suffix} tail=0x{tail:03x}"
+
+
+_WIRELINE_COMMANDS = {
+    # sent by opener
+    0x081: "status",
+    0x084: "unknown_1",
+    0x085: "unknown_2",
+    0x0a1: "pair_3_resp",
+    0x284: "motor_on",
+    0x393: "learn_3_resp",
+    0x401: "pair_2_resp",
+    0x48c: "openings",
+
+    # sent by switch
+    0x080: "get_status",
+    0x0a0: "pair_3",
+    0x181: "learn_2",
+    0x18c: "lock",
+    0x280: "open",
+    0x281: "light",
+    0x285: "motion",
+    0x391: "learn_1",
+    0x392: "learn_3",
+    0x400: "pair_2",
+    0x48b: "get_openings",
+}
+
+_DOOR_STATUS = {
+    1: "open",
+    2: "closed",
+    3: "stopped",
+    4: "opening",
+    5: "closing",
+}
+
+
+def pretty_wireline(rolling, fixed, data):
+    cmd = ((fixed >> 24) & 0xf00) | (data & 0xff)
+    command_name = _WIRELINE_COMMANDS.get(cmd, "<unknown>")
+
+    nibble = (data >> 8) & 0xf
+    byte1 = (data >> 16) & 0xff
+    byte2 = (data >> 24) & 0xff
+
+    msg = ""
+    if cmd == 0x080:
+        msg = f"byte2={byte2}"
+    elif cmd == 0x081:
+        door = _DOOR_STATUS.get(nibble, "<unknown>")
+        learn = (byte2 >> 5) & 1
+        unk1 = (byte2 >> 4) & 1
+        unk2 = (byte2 >> 2) & 1
+        light = (byte2 >> 1) & 1
+        lock = byte2 & 1
+        blocked = (byte1 >> 6) & 1
+        unk3 = (byte1 >> 5) & 1
+        msg = f"door={door} learn={learn} light={light} lock={lock} blocked={blocked^1} unk1={unk1} unk2={unk2} unk3={unk3}"
+    elif cmd == 0x0a1:
+        msg = f"byte1={byte1}"
+    elif cmd == 0x181:
+        msg = f"nibble={nibble}"
+    elif cmd == 0x280:
+        msg = "pressed" if byte1 == 1 else "released"
+    elif cmd == 0x391:
+        msg = f"nibble={nibble}"
+    elif cmd == 0x393:
+        msg = f"nibble={nibble}"
+    elif cmd == 0x48c:
+        openings = (byte1 << 8) | byte2
+        msg = f"number={openings}"
+
+    return f"rolling=0x{rolling:07x} fixed=0x{fixed:010x} data=0x{data:08x} cmd=0x{cmd:03x} {command_name} {msg}".strip()
