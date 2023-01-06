@@ -28,12 +28,13 @@ import secplus
 
 class secplus_v2_tx(gr.top_block):
 
-    def __init__(self, fixed=1234567890, freq=315000000, rolling=123456789):
+    def __init__(self, data=(-1), fixed=1234567890, freq=315000000, rolling=123456789):
         gr.top_block.__init__(self, "Secplus V2 Tx", catch_exceptions=True)
 
         ##################################################
         # Parameters
         ##################################################
+        self.data = data
         self.fixed = fixed
         self.freq = freq
         self.rolling = rolling
@@ -41,7 +42,7 @@ class secplus_v2_tx(gr.top_block):
         ##################################################
         # Variables
         ##################################################
-        self.seq = seq = [0]*200 + secplus.encode_v2_manchester(rolling, fixed)*3 + [0]*200
+        self.seq = seq = [0]*200 + secplus.encode_v2_manchester(rolling, fixed, None if data == -1 else data)*3 + [0]*200
         self.samp_rate = samp_rate = 2e6
 
         ##################################################
@@ -76,12 +77,19 @@ class secplus_v2_tx(gr.top_block):
         self.connect((self.single_pole_iir_filter_xx_0, 0), (self.blocks_multiply_xx_0, 0))
 
 
+    def get_data(self):
+        return self.data
+
+    def set_data(self, data):
+        self.data = data
+        self.set_seq([0]*200 + secplus.encode_v2_manchester(self.rolling, self.fixed, None if self.data == -1 else self.data)*3 + [0]*200)
+
     def get_fixed(self):
         return self.fixed
 
     def set_fixed(self, fixed):
         self.fixed = fixed
-        self.set_seq([0]*200 + secplus.encode_v2_manchester(self.rolling, self.fixed)*3 + [0]*200)
+        self.set_seq([0]*200 + secplus.encode_v2_manchester(self.rolling, self.fixed, None if self.data == -1 else self.data)*3 + [0]*200)
 
     def get_freq(self):
         return self.freq
@@ -95,7 +103,7 @@ class secplus_v2_tx(gr.top_block):
 
     def set_rolling(self, rolling):
         self.rolling = rolling
-        self.set_seq([0]*200 + secplus.encode_v2_manchester(self.rolling, self.fixed)*3 + [0]*200)
+        self.set_seq([0]*200 + secplus.encode_v2_manchester(self.rolling, self.fixed, None if self.data == -1 else self.data)*3 + [0]*200)
 
     def get_seq(self):
         return self.seq
@@ -117,6 +125,9 @@ class secplus_v2_tx(gr.top_block):
 def argument_parser():
     parser = ArgumentParser()
     parser.add_argument(
+        "--data", dest="data", type=intx, default=(-1),
+        help="Set Data [default=%(default)r]")
+    parser.add_argument(
         "--fixed", dest="fixed", type=intx, default=1234567890,
         help="Set Fixed code [default=%(default)r]")
     parser.add_argument(
@@ -131,7 +142,7 @@ def argument_parser():
 def main(top_block_cls=secplus_v2_tx, options=None):
     if options is None:
         options = argument_parser().parse_args()
-    tb = top_block_cls(fixed=options.fixed, freq=options.freq, rolling=options.rolling)
+    tb = top_block_cls(data=options.data, fixed=options.fixed, freq=options.freq, rolling=options.rolling)
 
     def sig_handler(sig=None, frame=None):
         tb.stop()

@@ -49,7 +49,8 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: '[0]*200 + secplus.encode_v2_manchester(rolling, fixed)*3 + [0]*200'
+    value: '[0]*200 + secplus.encode_v2_manchester(rolling, fixed, None if data ==
+      -1 else data)*3 + [0]*200'
   states:
     bus_sink: false
     bus_source: false
@@ -135,6 +136,23 @@ blocks:
     coordinate: [232, 156.0]
     rotation: 0
     state: enabled
+- name: data
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: Data
+    short_id: ''
+    type: intx
+    value: '-1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [696, 12.0]
+    rotation: 0
+    state: true
 - name: fixed
   id: parameter
   parameters:
