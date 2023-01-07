@@ -124,11 +124,6 @@ static void _encode_v2_half(uint32_t rolling, uint32_t fixed, uint16_t data,
   packet_half[0] |= (type << 6);
 }
 
-static void _encode_wireline_half(uint32_t rolling, uint32_t fixed,
-                                  uint16_t data, uint8_t *packet_half) {
-  _encode_v2_half_parts(rolling, fixed, data, 1, packet_half);
-}
-
 int encode_v2(uint32_t rolling, uint64_t fixed, uint32_t data, int type,
               uint8_t *packet) {
   uint32_t rolling1, rolling2;
@@ -146,6 +141,11 @@ int encode_v2(uint32_t rolling, uint64_t fixed, uint32_t data, int type,
                   &packet[packet_len / 2]);
 
   return 0;
+}
+
+static void _encode_wireline_half(uint32_t rolling, uint32_t fixed,
+                                  uint16_t data, uint8_t *packet_half) {
+  _encode_v2_half_parts(rolling, fixed, data, 1, packet_half);
 }
 
 int encode_wireline(uint32_t rolling, uint64_t fixed, uint32_t data,
