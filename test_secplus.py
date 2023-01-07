@@ -308,7 +308,7 @@ class TestSecplus(unittest.TestCase):
             broken_code = code.copy()
             broken_code[offset] = 1
             broken_code[offset+1] = 0
-            with self.assertRaisesRegex(ValueError, "Unsupported packet type"):
+            with self.assertRaisesRegex(ValueError, "Unsupported packet type|Invalid input"):
                 secplus.decode_v2(broken_code)
 
     def test_decode_v2_invalid_type(self):
@@ -318,7 +318,7 @@ class TestSecplus(unittest.TestCase):
             broken_code = code.copy()
             broken_code[offset] = 1
             broken_code[offset+1] = 1
-            with self.assertRaisesRegex(ValueError, "Invalid packet type"):
+            with self.assertRaisesRegex(ValueError, "Invalid packet type|Invalid input"):
                 secplus.decode_v2(broken_code)
 
     def test_decode_v2_incorrect_payload_length(self):
@@ -328,7 +328,7 @@ class TestSecplus(unittest.TestCase):
                 broken_code = code + [random.randrange(2) for _ in range(80, 128)]
             elif len(code) == 128:
                 broken_code = code[:80]
-            with self.assertRaisesRegex(ValueError, "Incorrect payload length"):
+            with self.assertRaisesRegex(ValueError, "Incorrect payload length|Invalid input"):
                 secplus.decode_v2(broken_code)
 
     def test_decode_v2_invalid_ternary(self):
@@ -338,7 +338,7 @@ class TestSecplus(unittest.TestCase):
             broken_code = code.copy()
             broken_code[bit] = 1
             broken_code[bit+1] = 1
-            with self.assertRaisesRegex(ValueError, "Illegal value for ternary bit"):
+            with self.assertRaisesRegex(ValueError, "Illegal value for ternary bit|Invalid input"):
                 secplus.decode_v2(broken_code)
 
     def test_decode_v2_invalid_ternary_2(self):
@@ -349,7 +349,7 @@ class TestSecplus(unittest.TestCase):
             broken_code = code.copy()
             broken_code[bit] = 1
             broken_code[bit+3] = 1
-            with self.assertRaisesRegex(ValueError, "Illegal value for ternary bit"):
+            with self.assertRaisesRegex(ValueError, "Illegal value for ternary bit|Invalid input"):
                 secplus.decode_v2(broken_code)
 
     def test_decode_v2_incorrect_last_four_ternary(self):
@@ -362,7 +362,7 @@ class TestSecplus(unittest.TestCase):
             for broken_bit in ((correct_bit + 1) % 3, (correct_bit + 2) % 3):
                 broken_code[bit] = broken_bit >> 1
                 broken_code[bit+3] = broken_bit & 1
-                with self.assertRaisesRegex(ValueError, "Last four ternary bits do not repeat first four"):
+                with self.assertRaisesRegex(ValueError, "Last four ternary bits do not repeat first four|Invalid input"):
                     secplus.decode_v2(broken_code)
 
     def test_decode_v2_invalid_rolling_code(self):
@@ -373,7 +373,7 @@ class TestSecplus(unittest.TestCase):
         for bit in [12, 18, 24, 30, 36, 52, 58, 64, 70, 76]:
             broken_code[bit] = 1
             broken_code[bit+3] = 0
-        with self.assertRaisesRegex(ValueError, "Rolling code was not in expected range"):
+        with self.assertRaisesRegex(ValueError, "Rolling code was not in expected range|Invalid input"):
             secplus.decode_v2(broken_code)
 
     def test_decode_v2_incorrect_parity(self):
@@ -383,7 +383,7 @@ class TestSecplus(unittest.TestCase):
         for bit in [22, 25, 28, 31] + list(range(40, 64, 3)) + list(range(41, 64, 3)) + list(range(104, 128, 3)) + list(range(105, 128, 3)):
             broken_code = code.copy()
             broken_code[bit] ^= 1
-            with self.assertRaisesRegex(ValueError, "Parity bits are incorrect"):
+            with self.assertRaisesRegex(ValueError, "Parity bits are incorrect|Invalid input"):
                 secplus.decode_v2(broken_code)
 
     def test_decode_v2_robustness(self):
@@ -471,7 +471,7 @@ class TestSecplus(unittest.TestCase):
             secplus.decode_wireline("foo")
         with self.assertRaisesRegex(ValueError, "Input must be 19 bytes long"):
             secplus.decode_wireline(b"foo")
-        with self.assertRaisesRegex(ValueError, "First three bytes must be 0x55, 0x01, 0x00"):
+        with self.assertRaisesRegex(ValueError, "First three bytes must be 0x55, 0x01, 0x00|Invalid input"):
             secplus.decode_wireline(b"foo bar foo bar foo")
 
     def test_encode_wireline_rolling_limit(self):
@@ -504,7 +504,7 @@ class TestSecplus(unittest.TestCase):
                 for bit_mask in (0x40, 0x80, 0xc0):
                     broken_code = code.copy()
                     broken_code[byte_offset] |= bit_mask
-                    with self.assertRaisesRegex(ValueError, "Unexpected values for bits 8 and 9"):
+                    with self.assertRaisesRegex(ValueError, "Unexpected values for bits 8 and 9|Invalid input"):
                         secplus.decode_wireline(bytes(broken_code))
 
     def test_encode_wireline_parity(self):
@@ -547,25 +547,68 @@ def substitute_c():
             packet_len = 16
             frame_type = 1
             data_c = data
-        packet = os.urandom(packet_len)
-        libsecplus.encode_v2(c_uint32(rolling), c_uint64(fixed), c_uint32(data_c), frame_type, packet)
+        packet = create_string_buffer(os.urandom(packet_len), packet_len)
+        err = libsecplus.encode_v2(c_uint32(rolling), c_uint64(fixed), c_uint32(data_c), c_uint8(frame_type), packet)
+        if err < 0:
+            raise ValueError("Invalid input")
 
         code = []
-        for byte in packet:
+        for byte in packet.raw:
             for bit in range(8):
                 code.append((byte >> (7 - bit)) & 1)
         return code
 
     secplus.encode_v2 = encode_v2
 
+    def decode_v2(code):
+        frame_type = 0 if len(code) == 80 else 1
+
+        code_bytes = []
+        for offset in range(0, len(code), 8):
+            byte = 0
+            for bit in range(8):
+                byte |= code[offset + bit] << (7 - bit)
+            code_bytes.append(byte)
+        packet = bytes(code_bytes)
+
+        rolling = c_uint32()
+        fixed = c_uint64()
+        data = c_uint32()
+
+        err = libsecplus.decode_v2(c_uint8(frame_type), packet, byref(rolling), byref(fixed), byref(data))
+        if err < 0:
+            raise ValueError("Invalid input")
+        return rolling.value, fixed.value, None if len(code) == 80 else data.value
+
+    secplus.decode_v2 = decode_v2
+
     def encode_wireline(rolling, fixed, data):
         secplus._v2_check_limits(rolling, fixed, data)
 
-        packet = os.urandom(19)
-        libsecplus.encode_wireline(c_uint32(rolling), c_uint64(fixed), c_uint32(data), packet)
-        return packet
+        packet = create_string_buffer(os.urandom(19), 19)
+        err = libsecplus.encode_wireline(c_uint32(rolling), c_uint64(fixed), c_uint32(data), packet)
+        if err < 0:
+            raise ValueError("Invalid input")
+        return packet.raw
 
     secplus.encode_wireline = encode_wireline
+
+    def decode_wireline(code):
+        if not isinstance(code, bytes):
+            raise ValueError("Input must be bytes")
+        if len(code) != 19:
+            raise ValueError("Input must be 19 bytes long")
+
+        rolling = c_uint32()
+        fixed = c_uint64()
+        data = c_uint32()
+
+        err = libsecplus.decode_wireline(code, byref(rolling), byref(fixed), byref(data))
+        if err < 0:
+            raise ValueError("Invalid input")
+        return rolling.value, fixed.value, data.value
+
+    secplus.decode_wireline = decode_wireline
 
 
 if __name__ == '__main__':
