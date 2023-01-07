@@ -51,6 +51,10 @@ The rolling code should be at least 1 higher than the previously transmitted rol
 
 This Python module encodes and decodes the rolling and fixed codes, provides utility functions to prepare on-off keying sequences for transmission, and pretty-print the codes. It can be used to build stand-alone applications.
 
+### secplus.c & secplus.h
+
+This C library implements encoding & decoding of Security+ 2.0 messages (wireless & wireline). It should be suitable for use in microcontrollers.
+
 # Protocol details
 
 ### Security+
