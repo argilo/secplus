@@ -536,14 +536,36 @@ class TestSecplus(unittest.TestCase):
 def substitute_c():
     libsecplus = cdll.LoadLibrary("./libsecplus.so")
 
-    def c_encode_wireline(rolling, fixed, data):
+    def encode_v2(rolling, fixed, data=None):
+        secplus._v2_check_limits(rolling, fixed, data)
+
+        if data is None:
+            packet_len = 10
+            frame_type = 0
+            data_c = 0
+        else:
+            packet_len = 16
+            frame_type = 1
+            data_c = data
+        packet = os.urandom(packet_len)
+        libsecplus.encode_v2(c_uint32(rolling), c_uint64(fixed), c_uint32(data_c), frame_type, packet)
+
+        code = []
+        for byte in packet:
+            for bit in range(8):
+                code.append((byte >> (7 - bit)) & 1)
+        return code
+
+    secplus.encode_v2 = encode_v2
+
+    def encode_wireline(rolling, fixed, data):
         secplus._v2_check_limits(rolling, fixed, data)
 
         packet = os.urandom(19)
         libsecplus.encode_wireline(c_uint32(rolling), c_uint64(fixed), c_uint32(data), packet)
         return packet
 
-    secplus.encode_wireline = c_encode_wireline
+    secplus.encode_wireline = encode_wireline
 
 
 if __name__ == '__main__':

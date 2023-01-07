@@ -12,7 +12,10 @@
 
 #include <stdint.h>
 
+extern int encode_v2(uint32_t rolling, uint64_t fixed, uint32_t data, int type,
+                     uint8_t *packet);
+
 extern int encode_wireline(uint32_t rolling, uint64_t fixed, uint32_t data,
-                           uint8_t *code);
+                           uint8_t *packet);
 
 #endif

@@ -77,17 +77,18 @@ static void _v2_calc_parity(uint64_t fixed, uint32_t *data) {
   *data |= (parity << 12);
 }
 
-static void _v2_scramble(uint8_t indicator, uint32_t *parts, int bits,
-                         int out_offset, uint8_t *packet_half) {
-  const uint8_t *order = _ORDER[indicator >> 4];
-  const uint8_t *invert = _INVERT[indicator & 0xf];
+static void _v2_scramble(uint32_t *parts, int type, uint8_t *packet_half) {
+  const uint8_t *order = _ORDER[packet_half[0] >> 4];
+  const uint8_t *invert = _INVERT[packet_half[0] & 0xf];
   uint32_t parts_permuted[3];
+  int out_offset = 10;
+  int end = (type == 0 ? 8 : 0);
 
   for (int i = 0; i < 3; i++) {
     parts_permuted[i] = invert[i] ? ~parts[order[i]] : parts[order[i]];
   }
 
-  for (int i = bits - 1; i >= 0; i--) {
+  for (int i = 18 - 1; i >= end; i--) {
     packet_half[out_offset >> 3] |= ((parts_permuted[0] >> i) & 1)
                                     << (7 - (out_offset % 8));
     out_offset++;
@@ -101,7 +102,7 @@ static void _v2_scramble(uint8_t indicator, uint32_t *parts, int bits,
 }
 
 static void _encode_v2_half_parts(uint8_t *rolling, uint32_t fixed,
-                                  uint16_t data, uint8_t *indicator,
+                                  uint16_t data, int type,
                                   uint8_t *packet_half) {
   uint32_t parts[3] = {0};
 
@@ -118,14 +119,45 @@ static void _encode_v2_half_parts(uint8_t *rolling, uint32_t fixed,
   parts[2] |= (rolling[2] << 2);
   parts[2] |= rolling[3];
 
-  *indicator = (uint8_t)parts[2];
+  packet_half[0] = (uint8_t)parts[2];
 
-  _v2_scramble(*indicator, parts, 18, 10, packet_half);
+  _v2_scramble(parts, type, packet_half);
+}
+
+static void _encode_v2_half(uint8_t *rolling, uint32_t fixed, uint16_t data,
+                            int type, uint8_t *packet_half) {
+  _encode_v2_half_parts(rolling, fixed, data, type, packet_half);
+
+  // shift indicator two bits to the right
+  packet_half[1] |= (packet_half[0] & 0x3) << 6;
+  packet_half[0] >>= 2;
+
+  // set frame type
+  packet_half[0] |= (type << 6);
 }
 
 static void _encode_wireline_half(uint8_t *rolling, uint32_t fixed,
                                   uint16_t data, uint8_t *packet_half) {
-  _encode_v2_half_parts(rolling, fixed, data, &packet_half[0], packet_half);
+  _encode_v2_half_parts(rolling, fixed, data, 1, packet_half);
+}
+
+int encode_v2(uint32_t rolling, uint64_t fixed, uint32_t data, int type,
+              uint8_t *packet) {
+  uint8_t rolling1[9], rolling2[9];
+  int packet_len = (type == 0 ? 10 : 16);
+
+  _encode_v2_rolling(rolling, rolling1, rolling2);
+  _v2_calc_parity(fixed, &data);
+
+  for (int i = 0; i < packet_len; i++) {
+    packet[i] = 0x00;
+  }
+
+  _encode_v2_half(rolling1, fixed >> 20, data >> 16, type, &packet[0]);
+  _encode_v2_half(rolling2, fixed & 0xfffff, data & 0xffff, type,
+                  &packet[packet_len / 2]);
+
+  return 0;
 }
 
 int encode_wireline(uint32_t rolling, uint64_t fixed, uint32_t data,
