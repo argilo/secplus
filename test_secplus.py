@@ -243,14 +243,14 @@ class TestSecplus(unittest.TestCase):
         rolling = 2**28
         fixed = 2**40 - 1
 
-        with self.assertRaisesRegex(ValueError, r"Rolling code must be less than 2\^28"):
+        with self.assertRaisesRegex(ValueError, r"Rolling code must be less than 2\^28|Invalid input"):
             secplus.encode_v2(rolling, fixed)
 
     def test_encode_v2_fixed_limit(self):
         rolling = 2**28 - 1
         fixed = 2**40
 
-        with self.assertRaisesRegex(ValueError, r"Fixed code must be less than 2\^40"):
+        with self.assertRaisesRegex(ValueError, r"Fixed code must be less than 2\^40|Invalid input"):
             secplus.encode_v2(rolling, fixed)
 
     def test_encode_v2_data_limit(self):
@@ -479,7 +479,7 @@ class TestSecplus(unittest.TestCase):
         fixed = 2**40 - 1
         data = 2**32 - 1
 
-        with self.assertRaisesRegex(ValueError, r"Rolling code must be less than 2\^28"):
+        with self.assertRaisesRegex(ValueError, r"Rolling code must be less than 2\^28|Invalid input"):
             secplus.encode_wireline(rolling, fixed, data)
 
     def test_encode_wireline_fixed_limit(self):
@@ -487,7 +487,7 @@ class TestSecplus(unittest.TestCase):
         fixed = 2**40
         data = 2**32 - 1
 
-        with self.assertRaisesRegex(ValueError, r"Fixed code must be less than 2\^40"):
+        with self.assertRaisesRegex(ValueError, r"Fixed code must be less than 2\^40|Invalid input"):
             secplus.encode_wireline(rolling, fixed, data)
 
     def test_encode_wireline_data_limit(self):
@@ -537,13 +537,14 @@ def substitute_c():
     libsecplus = cdll.LoadLibrary("./libsecplus.so")
 
     def encode_v2(rolling, fixed, data=None):
-        secplus._v2_check_limits(rolling, fixed, data)
-
         if data is None:
             packet_len = 10
             frame_type = 0
             data_c = 0
         else:
+            if data >= 2**32:
+                raise ValueError("Data must be less than 2^32")
+
             packet_len = 16
             frame_type = 1
             data_c = data
@@ -583,7 +584,8 @@ def substitute_c():
     secplus.decode_v2 = decode_v2
 
     def encode_wireline(rolling, fixed, data):
-        secplus._v2_check_limits(rolling, fixed, data)
+        if data >= 2**32:
+            raise ValueError("Data must be less than 2^32")
 
         packet = create_string_buffer(os.urandom(19), 19)
         err = libsecplus.encode_wireline(c_uint32(rolling), c_uint64(fixed), c_uint32(data), packet)

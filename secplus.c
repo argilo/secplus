@@ -261,10 +261,28 @@ static void _encode_v2_half(const uint32_t rolling, const uint32_t fixed,
   packet_half[0] |= (frame_type << 6);
 }
 
+int _v2_check_limits(const uint32_t rolling, const uint64_t fixed) {
+  if ((rolling >> 28) != 0) {
+    return -1;
+  }
+
+  if ((fixed >> 40) != 0) {
+    return -1;
+  }
+
+  return 0;
+}
+
 int encode_v2(const uint32_t rolling, const uint64_t fixed, uint32_t data,
               const uint8_t frame_type, uint8_t *packet) {
+  int err = 0;
   uint32_t rolling1, rolling2;
   const int packet_len = (frame_type == 0 ? 10 : 16);
+
+  err = _v2_check_limits(rolling, fixed);
+  if (err < 0) {
+    return err;
+  }
 
   _encode_v2_rolling(rolling, &rolling1, &rolling2);
   _v2_calc_parity(fixed, &data);
@@ -333,7 +351,13 @@ static void _encode_wireline_half(const uint32_t rolling, const uint32_t fixed,
 
 int encode_wireline(const uint32_t rolling, const uint64_t fixed, uint32_t data,
                     uint8_t *packet) {
+  int err = 0;
   uint32_t rolling1, rolling2;
+
+  err = _v2_check_limits(rolling, fixed);
+  if (err < 0) {
+    return err;
+  }
 
   _encode_v2_rolling(rolling, &rolling1, &rolling2);
   _v2_calc_parity(fixed, &data);
