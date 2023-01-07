@@ -22,6 +22,7 @@ import os
 import random
 import unittest
 import secplus
+from ctypes import *
 
 
 class TestSecplus(unittest.TestCase):
@@ -532,5 +533,25 @@ class TestSecplus(unittest.TestCase):
             self.assertEqual(data, data_out)
 
 
+def substitute_c():
+    libsecplus = cdll.LoadLibrary("./libsecplus.so")
+
+    def c_encode_wireline(rolling, fixed, data):
+        secplus._v2_check_limits(rolling, fixed, data)
+
+        packet = random.randbytes(19)
+        libsecplus.encode_wireline(c_uint32(rolling), c_uint64(fixed), c_uint32(data), packet)
+        return packet
+
+    secplus.encode_wireline = c_encode_wireline
+
+
 if __name__ == '__main__':
+    result = unittest.main(exit=False)
+
+    if not result.result.wasSuccessful():
+        exit(1)
+
+    substitute_c()
+
     unittest.main()

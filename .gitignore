@@ -1,1 +1,3 @@
 *.pyc
+/libsecplus.so
+/secplus.o

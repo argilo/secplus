@@ -16,6 +16,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Checkout code
         uses: actions/checkout@v3
+      - name: Compile C library
+        run: |
+          gcc -c -Wall -Werror -fpic secplus.c
+          gcc -shared -o libsecplus.so secplus.o
       - name: Test
         env:
           TEST_CYCLES: 50000
