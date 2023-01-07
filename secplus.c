@@ -85,7 +85,7 @@ static int _v2_combine_halves(const uint8_t frame_type, const uint32_t rolling1,
   *fixed = ((uint64_t)fixed1 << 20) | fixed2;
 
   if (frame_type == 1) {
-    *data = (data1 << 16) | data2;
+    *data = ((uint32_t)data1 << 16) | data2;
 
     err = _v2_check_parity(*fixed, *data);
     if (err < 0) {
