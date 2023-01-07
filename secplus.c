@@ -189,13 +189,16 @@ static int _v2_unscramble(const uint8_t frame_type, const uint8_t indicator,
   uint32_t parts_permuted[3] = {0, 0, 0};
   for (int i = 18 - 1; i >= end; i--) {
     parts_permuted[0] |=
-        ((packet_half[out_offset >> 3] >> (7 - (out_offset % 8))) & 1) << i;
+        (uint32_t)((packet_half[out_offset >> 3] >> (7 - (out_offset % 8))) & 1)
+        << i;
     out_offset++;
     parts_permuted[1] |=
-        ((packet_half[out_offset >> 3] >> (7 - (out_offset % 8))) & 1) << i;
+        (uint32_t)((packet_half[out_offset >> 3] >> (7 - (out_offset % 8))) & 1)
+        << i;
     out_offset++;
     parts_permuted[2] |=
-        ((packet_half[out_offset >> 3] >> (7 - (out_offset % 8))) & 1) << i;
+        (uint32_t)((packet_half[out_offset >> 3] >> (7 - (out_offset % 8))) & 1)
+        << i;
     out_offset++;
   }
 
