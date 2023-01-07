@@ -72,12 +72,12 @@ static void _v2_calc_parity(const uint64_t fixed, uint32_t *data) {
 static const int8_t _ORDER[11] = {9, 33, 6, -1, 24, 18, 36, -1, 24, 36, 6};
 static const int8_t _INVERT[11] = {6, 2, 1, -1, 7, 5, 3, -1, 4, 0, 5};
 
-static void _v2_scramble(const uint32_t *parts, const int type,
+static void _v2_scramble(const uint32_t *parts, const uint8_t frame_type,
                          uint8_t *packet_half) {
   const int8_t order = _ORDER[packet_half[0] >> 4];
   const int8_t invert = _INVERT[packet_half[0] & 0xf];
   int out_offset = 10;
-  const int end = (type == 0 ? 8 : 0);
+  const int end = (frame_type == 0 ? 8 : 0);
   const uint32_t parts_permuted[3] = {
       (invert & 4) ? ~parts[(order >> 4) & 3] : parts[(order >> 4) & 3],
       (invert & 2) ? ~parts[(order >> 2) & 3] : parts[(order >> 2) & 3],
@@ -97,33 +97,33 @@ static void _v2_scramble(const uint32_t *parts, const int type,
 }
 
 static void _encode_v2_half_parts(const uint32_t rolling, const uint32_t fixed,
-                                  const uint16_t data, const int type,
+                                  const uint16_t data, const uint8_t frame_type,
                                   uint8_t *packet_half) {
   const uint32_t parts[3] = {((fixed >> 10) << 8) | (data >> 8),
                              ((fixed & 0x3ff) << 8) | (data & 0xff), rolling};
 
   packet_half[0] = (uint8_t)rolling;
 
-  _v2_scramble(parts, type, packet_half);
+  _v2_scramble(parts, frame_type, packet_half);
 }
 
 static void _encode_v2_half(const uint32_t rolling, const uint32_t fixed,
-                            const uint16_t data, const int type,
+                            const uint16_t data, const uint8_t frame_type,
                             uint8_t *packet_half) {
-  _encode_v2_half_parts(rolling, fixed, data, type, packet_half);
+  _encode_v2_half_parts(rolling, fixed, data, frame_type, packet_half);
 
   // shift indicator two bits to the right
   packet_half[1] |= (packet_half[0] & 0x3) << 6;
   packet_half[0] >>= 2;
 
   // set frame type
-  packet_half[0] |= (type << 6);
+  packet_half[0] |= (frame_type << 6);
 }
 
 int encode_v2(const uint32_t rolling, const uint64_t fixed, uint32_t data,
-              const int type, uint8_t *packet) {
+              const uint8_t frame_type, uint8_t *packet) {
   uint32_t rolling1, rolling2;
-  const int packet_len = (type == 0 ? 10 : 16);
+  const int packet_len = (frame_type == 0 ? 10 : 16);
 
   _encode_v2_rolling(rolling, &rolling1, &rolling2);
   _v2_calc_parity(fixed, &data);
@@ -132,8 +132,8 @@ int encode_v2(const uint32_t rolling, const uint64_t fixed, uint32_t data,
     packet[i] = 0x00;
   }
 
-  _encode_v2_half(rolling1, fixed >> 20, data >> 16, type, &packet[0]);
-  _encode_v2_half(rolling2, fixed & 0xfffff, data & 0xffff, type,
+  _encode_v2_half(rolling1, fixed >> 20, data >> 16, frame_type, &packet[0]);
+  _encode_v2_half(rolling2, fixed & 0xfffff, data & 0xffff, frame_type,
                   &packet[packet_len / 2]);
 
   return 0;
