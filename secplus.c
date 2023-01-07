@@ -104,11 +104,8 @@ static void _v2_scramble(uint32_t *parts, int type, uint8_t *packet_half) {
 static void _encode_v2_half_parts(uint32_t rolling, uint32_t fixed,
                                   uint16_t data, int type,
                                   uint8_t *packet_half) {
-  uint32_t parts[3] = {0};
-
-  parts[0] = ((fixed >> 10) << 8) | (data >> 8);
-  parts[1] = ((fixed & 0x3ff) << 8) | (data & 0xff);
-  parts[2] = rolling;
+  uint32_t parts[3] = {((fixed >> 10) << 8) | (data >> 8),
+                       ((fixed & 0x3ff) << 8) | (data & 0xff), rolling};
 
   packet_half[0] = (uint8_t)rolling;
 
