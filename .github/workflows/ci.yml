@@ -18,8 +18,8 @@ jobs:
         uses: actions/checkout@v3
       - name: Compile C library
         run: |
-          gcc -c -Wall -Werror -fpic secplus.c
-          gcc -shared -o libsecplus.so secplus.o
+          gcc -c -Wall -Werror -fpic -o src/secplus.o src/secplus.c
+          gcc -shared -o libsecplus.so src/secplus.o
       - name: Test
         env:
           TEST_CYCLES: 50000
