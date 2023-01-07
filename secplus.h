@@ -10,6 +10,10 @@
 #ifndef SECPLUS_H
 #define SECPLUS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 
 extern int encode_v2(uint32_t rolling, uint64_t fixed, uint32_t data,
@@ -23,5 +27,9 @@ extern int encode_wireline(uint32_t rolling, uint64_t fixed, uint32_t data,
 
 extern int decode_wireline(const uint8_t *packet, uint32_t *rolling,
                            uint64_t *fixed, uint32_t *data);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
