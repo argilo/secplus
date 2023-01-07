@@ -9,14 +9,6 @@
 
 #include "secplus.h"
 
-static const uint8_t _ORDER[11][3] = {
-    {0, 2, 1}, {2, 0, 1}, {0, 1, 2}, {0, 0, 0}, {1, 2, 0}, {1, 0, 2},
-    {2, 1, 0}, {0, 0, 0}, {1, 2, 0}, {2, 1, 0}, {0, 1, 2}};
-
-static const uint8_t _INVERT[11][3] = {
-    {1, 1, 0}, {0, 1, 0}, {0, 0, 1}, {0, 0, 0}, {1, 1, 1}, {1, 0, 1},
-    {0, 1, 1}, {0, 0, 0}, {1, 0, 0}, {0, 0, 0}, {1, 0, 1}};
-
 static void _encode_v2_rolling(uint32_t rolling, uint32_t *rolling1,
                                uint32_t *rolling2) {
   uint32_t rolling_reversed = 0;
@@ -77,16 +69,18 @@ static void _v2_calc_parity(uint64_t fixed, uint32_t *data) {
   *data |= (parity << 12);
 }
 
+static const int8_t _ORDER[11] = {9, 33, 6, -1, 24, 18, 36, -1, 24, 36, 6};
+static const int8_t _INVERT[11] = {6, 2, 1, -1, 7, 5, 3, -1, 4, 0, 5};
+
 static void _v2_scramble(uint32_t *parts, int type, uint8_t *packet_half) {
-  const uint8_t *order = _ORDER[packet_half[0] >> 4];
-  const uint8_t *invert = _INVERT[packet_half[0] & 0xf];
-  uint32_t parts_permuted[3];
+  const int8_t order = _ORDER[packet_half[0] >> 4];
+  const int8_t invert = _INVERT[packet_half[0] & 0xf];
   int out_offset = 10;
   int end = (type == 0 ? 8 : 0);
-
-  for (int i = 0; i < 3; i++) {
-    parts_permuted[i] = invert[i] ? ~parts[order[i]] : parts[order[i]];
-  }
+  uint32_t parts_permuted[3] = {
+      (invert & 4) ? ~parts[(order >> 4) & 3] : parts[(order >> 4) & 3],
+      (invert & 2) ? ~parts[(order >> 2) & 3] : parts[(order >> 2) & 3],
+      (invert & 1) ? ~parts[order & 3] : parts[order & 3]};
 
   for (int i = 18 - 1; i >= end; i--) {
     packet_half[out_offset >> 3] |= ((parts_permuted[0] >> i) & 1)
