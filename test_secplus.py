@@ -539,7 +539,7 @@ def substitute_c():
     def c_encode_wireline(rolling, fixed, data):
         secplus._v2_check_limits(rolling, fixed, data)
 
-        packet = random.randbytes(19)
+        packet = os.urandom(19)
         libsecplus.encode_wireline(c_uint32(rolling), c_uint64(fixed), c_uint32(data), packet)
         return packet
 
