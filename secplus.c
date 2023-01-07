@@ -9,7 +9,7 @@
 
 #include "secplus.h"
 
-static void _encode_v2_rolling(uint32_t rolling, uint32_t *rolling1,
+static void _encode_v2_rolling(const uint32_t rolling, uint32_t *rolling1,
                                uint32_t *rolling2) {
   uint32_t rolling_reversed = 0;
 
@@ -59,7 +59,7 @@ static void _encode_v2_rolling(uint32_t rolling, uint32_t *rolling1,
   *rolling2 |= (rolling_reversed % 3) << 8;
 }
 
-static void _v2_calc_parity(uint64_t fixed, uint32_t *data) {
+static void _v2_calc_parity(const uint64_t fixed, uint32_t *data) {
   uint32_t parity = (fixed >> 32) & 0xf;
 
   *data &= 0xffff0fff;
@@ -72,12 +72,13 @@ static void _v2_calc_parity(uint64_t fixed, uint32_t *data) {
 static const int8_t _ORDER[11] = {9, 33, 6, -1, 24, 18, 36, -1, 24, 36, 6};
 static const int8_t _INVERT[11] = {6, 2, 1, -1, 7, 5, 3, -1, 4, 0, 5};
 
-static void _v2_scramble(uint32_t *parts, int type, uint8_t *packet_half) {
+static void _v2_scramble(const uint32_t *parts, const int type,
+                         uint8_t *packet_half) {
   const int8_t order = _ORDER[packet_half[0] >> 4];
   const int8_t invert = _INVERT[packet_half[0] & 0xf];
   int out_offset = 10;
-  int end = (type == 0 ? 8 : 0);
-  uint32_t parts_permuted[3] = {
+  const int end = (type == 0 ? 8 : 0);
+  const uint32_t parts_permuted[3] = {
       (invert & 4) ? ~parts[(order >> 4) & 3] : parts[(order >> 4) & 3],
       (invert & 2) ? ~parts[(order >> 2) & 3] : parts[(order >> 2) & 3],
       (invert & 1) ? ~parts[order & 3] : parts[order & 3]};
@@ -95,19 +96,20 @@ static void _v2_scramble(uint32_t *parts, int type, uint8_t *packet_half) {
   }
 }
 
-static void _encode_v2_half_parts(uint32_t rolling, uint32_t fixed,
-                                  uint16_t data, int type,
+static void _encode_v2_half_parts(const uint32_t rolling, const uint32_t fixed,
+                                  const uint16_t data, const int type,
                                   uint8_t *packet_half) {
-  uint32_t parts[3] = {((fixed >> 10) << 8) | (data >> 8),
-                       ((fixed & 0x3ff) << 8) | (data & 0xff), rolling};
+  const uint32_t parts[3] = {((fixed >> 10) << 8) | (data >> 8),
+                             ((fixed & 0x3ff) << 8) | (data & 0xff), rolling};
 
   packet_half[0] = (uint8_t)rolling;
 
   _v2_scramble(parts, type, packet_half);
 }
 
-static void _encode_v2_half(uint32_t rolling, uint32_t fixed, uint16_t data,
-                            int type, uint8_t *packet_half) {
+static void _encode_v2_half(const uint32_t rolling, const uint32_t fixed,
+                            const uint16_t data, const int type,
+                            uint8_t *packet_half) {
   _encode_v2_half_parts(rolling, fixed, data, type, packet_half);
 
   // shift indicator two bits to the right
@@ -118,10 +120,10 @@ static void _encode_v2_half(uint32_t rolling, uint32_t fixed, uint16_t data,
   packet_half[0] |= (type << 6);
 }
 
-int encode_v2(uint32_t rolling, uint64_t fixed, uint32_t data, int type,
-              uint8_t *packet) {
+int encode_v2(const uint32_t rolling, const uint64_t fixed, uint32_t data,
+              const int type, uint8_t *packet) {
   uint32_t rolling1, rolling2;
-  int packet_len = (type == 0 ? 10 : 16);
+  const int packet_len = (type == 0 ? 10 : 16);
 
   _encode_v2_rolling(rolling, &rolling1, &rolling2);
   _v2_calc_parity(fixed, &data);
@@ -137,12 +139,12 @@ int encode_v2(uint32_t rolling, uint64_t fixed, uint32_t data, int type,
   return 0;
 }
 
-static void _encode_wireline_half(uint32_t rolling, uint32_t fixed,
-                                  uint16_t data, uint8_t *packet_half) {
+static void _encode_wireline_half(const uint32_t rolling, const uint32_t fixed,
+                                  const uint16_t data, uint8_t *packet_half) {
   _encode_v2_half_parts(rolling, fixed, data, 1, packet_half);
 }
 
-int encode_wireline(uint32_t rolling, uint64_t fixed, uint32_t data,
+int encode_wireline(const uint32_t rolling, const uint64_t fixed, uint32_t data,
                     uint8_t *packet) {
   uint32_t rolling1, rolling2;
 
