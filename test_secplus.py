@@ -24,6 +24,7 @@ import unittest
 import secplus
 import struct
 import subprocess
+import sys
 from ctypes import *
 
 
@@ -714,21 +715,21 @@ def shutdown_avr(sim):
 if __name__ == '__main__':
     status = 0
 
-    print("Testing Python:")
+    print("Testing Python:", file=sys.stderr)
     result = unittest.main(exit=False)
     if not result.result.wasSuccessful():
         status = 1
 
     substitute_c()
 
-    print("Testing C:")
+    print("Testing C:", file=sys.stderr)
     result = unittest.main(exit=False)
     if not result.result.wasSuccessful():
         status = 1
 
     process = substitute_avr()
 
-    print("Testing C in AVR simulator:")
+    print("Testing C in AVR simulator:", file=sys.stderr)
     TestSecplus.test_cycles //= 100
     result = unittest.main(exit=False)
     if not result.result.wasSuccessful():
