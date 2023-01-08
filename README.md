@@ -53,7 +53,7 @@ This Python module encodes and decodes the rolling and fixed codes, provides uti
 
 ### secplus.c & secplus.h
 
-This C library implements encoding & decoding of Security+ 2.0 messages (wireless & wireline). It should be suitable for use in microcontrollers.
+This C library implements encoding & decoding of Security+ & Security+ 2.0 messages (both wireless & wireline). It it suitable for use in Arduino and other microcontrollers.
 
 # Protocol details
 
