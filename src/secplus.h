@@ -16,9 +16,10 @@ extern "C" {
 
 #include <stdint.h>
 
-extern int encode(uint32_t rolling, uint32_t fixed, uint8_t *symbols);
+extern int encode_v1(uint32_t rolling, uint32_t fixed, uint8_t *symbols);
 
-extern int decode(const uint8_t *symbols, uint32_t *rolling, uint32_t *fixed);
+extern int decode_v1(const uint8_t *symbols, uint32_t *rolling,
+                     uint32_t *fixed);
 
 extern int encode_v2(uint32_t rolling, uint64_t fixed, uint32_t data,
                      uint8_t frame_type, uint8_t *packet);

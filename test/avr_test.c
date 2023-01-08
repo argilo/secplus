@@ -69,7 +69,7 @@ int main() {
     case 1:
       get_uint32(&rolling);
       get_uint32(&fixed_v1);
-      err = encode(rolling, fixed_v1, v1_symbols);
+      err = encode_v1(rolling, fixed_v1, v1_symbols);
       put_err(err);
       put_bytes(v1_symbols, 40);
       break;
@@ -99,7 +99,7 @@ int main() {
       break;
     case 5:
       get_bytes(v1_symbols, 40);
-      err = decode(v1_symbols, &rolling, &fixed_v1);
+      err = decode_v1(v1_symbols, &rolling, &fixed_v1);
       put_err(err);
       put_uint32(rolling);
       put_uint32(fixed_v1);

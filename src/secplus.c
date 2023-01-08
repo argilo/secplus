@@ -9,7 +9,7 @@
 
 #include "secplus.h"
 
-int encode(const uint32_t rolling, uint32_t fixed, uint8_t *symbols) {
+int encode_v1(const uint32_t rolling, uint32_t fixed, uint8_t *symbols) {
   uint32_t rolling_reversed = 0;
   int i;
   int acc;
@@ -43,7 +43,7 @@ int encode(const uint32_t rolling, uint32_t fixed, uint8_t *symbols) {
   return 0;
 }
 
-int decode(const uint8_t *symbols, uint32_t *rolling, uint32_t *fixed) {
+int decode_v1(const uint8_t *symbols, uint32_t *rolling, uint32_t *fixed) {
   uint32_t rolling_reversed = 0;
   int acc = 0;
   int digit = 0;

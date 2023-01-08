@@ -543,7 +543,7 @@ def substitute_c():
         if rolling >= 2**32:
             raise ValueError("Rolling code must be less than 2^32")
         symbols = create_string_buffer(os.urandom(40), 40)
-        err = libsecplus.encode(c_uint32(rolling), c_uint32(fixed), symbols)
+        err = libsecplus.encode_v1(c_uint32(rolling), c_uint32(fixed), symbols)
         if err < 0:
             raise ValueError("Invalid input")
         return list(symbols.raw)
@@ -554,7 +554,7 @@ def substitute_c():
         symbols = create_string_buffer(bytes(code), 40)
         rolling = c_uint32()
         fixed = c_uint32()
-        err = libsecplus.decode(symbols, byref(rolling), byref(fixed))
+        err = libsecplus.decode_v1(symbols, byref(rolling), byref(fixed))
         if err < 0:
             raise ValueError("Invalid input")
         return rolling.value, fixed.value
