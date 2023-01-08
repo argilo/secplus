@@ -779,7 +779,7 @@ if __name__ == '__main__':
     process = substitute_avr()
 
     print("Testing C in AVR simulator:", file=sys.stderr)
-    TestSecplus.test_cycles //= 100
+    TestSecplus.test_cycles //= 50
     result = unittest.main(exit=False)
     if not result.result.wasSuccessful():
         status = 1
