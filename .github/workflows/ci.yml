@@ -20,8 +20,8 @@ jobs:
         uses: actions/checkout@v3
       - name: Compile C library
         run: |
-          gcc -c -Wall -Werror -fpic -o src/secplus.o src/secplus.c
-          gcc -shared -o libsecplus.so src/secplus.o
+          gcc --std=c90 -pedantic -c -Wall -Werror -fpic -o src/secplus.o src/secplus.c
+          gcc --std=c90 -pedantic -shared -o libsecplus.so src/secplus.o
       - name: Compile C library for AVR
         run: avr-gcc -mmcu=atmega328 -Wall -Werror -o test/avr_test.elf src/secplus.c test/avr_test.c
       - name: Test
