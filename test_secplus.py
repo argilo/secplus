@@ -157,7 +157,7 @@ class TestSecplus(unittest.TestCase):
         rolling = 2**32 - 1
         fixed = 3**20
 
-        with self.assertRaisesRegex(ValueError, r"Fixed code must be less than 3\^20"):
+        with self.assertRaisesRegex(ValueError, r"Fixed code must be less than 3\^20|Invalid input"):
             secplus.encode(rolling, fixed)
 
     def test_encode(self):
@@ -539,6 +539,28 @@ class TestSecplus(unittest.TestCase):
 def substitute_c():
     libsecplus = cdll.LoadLibrary("./libsecplus.so")
 
+    def encode(rolling, fixed):
+        if rolling >= 2**32:
+            raise ValueError("Rolling code must be less than 2^32")
+        symbols = create_string_buffer(os.urandom(40), 40)
+        err = libsecplus.encode(c_uint32(rolling), c_uint32(fixed), symbols)
+        if err < 0:
+            raise ValueError("Invalid input")
+        return list(symbols.raw)
+
+    secplus.encode = encode
+
+    def decode(code):
+        symbols = create_string_buffer(bytes(code), 40)
+        rolling = c_uint32()
+        fixed = c_uint32()
+        err = libsecplus.decode(symbols, byref(rolling), byref(fixed))
+        if err < 0:
+            raise ValueError("Invalid input")
+        return rolling.value, fixed.value
+
+    secplus.decode = decode
+
     def encode_v2(rolling, fixed, data=None):
         if data is None:
             packet_len = 10
@@ -620,17 +642,44 @@ def substitute_avr():
     sim = subprocess.Popen(["simulavr", "-d", "atmega328", "-f", "test/avr_test.elf", "-W", "0x20,-", "-R", "0x22,-", "-T", "exit"],
                            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
+    def encode(rolling, fixed):
+        if rolling >= 2**32:
+            raise ValueError("Rolling code must be less than 2^32")
+
+        sim.stdin.write(struct.pack("<BLL", 1, rolling, fixed))
+        sim.stdin.flush()
+        err = sim.stdout.read(1)[0]
+        symbols = sim.stdout.read(40)
+
+        if err != 0:
+            raise ValueError("Invalid input")
+
+        return list(symbols)
+
+    secplus.encode = encode
+
+    def decode(code):
+        sim.stdin.write(bytes([5]))
+        sim.stdin.write(bytes(code))
+        sim.stdin.flush()
+        err, rolling, fixed = struct.unpack("<BLL", sim.stdout.read(9))
+        if err != 0:
+            raise ValueError(f"Invalid input")
+        return rolling, fixed
+
+    secplus.decode = decode
+
     def encode_v2(rolling, fixed, data=None):
         if data is None:
             packet_len = 10
-            command = 1
+            command = 2
             data_c = 0
         else:
             if data >= 2**32:
                 raise ValueError("Data must be less than 2^32")
 
             packet_len = 16
-            command = 2
+            command = 3
             data_c = data
 
         sim.stdin.write(struct.pack("<BLQL", command, rolling, fixed, data_c))
@@ -650,7 +699,7 @@ def substitute_avr():
     secplus.encode_v2 = encode_v2
 
     def decode_v2(code):
-        command = 4 if len(code) == 80 else 5
+        command = 6 if len(code) == 80 else 7
 
         code_bytes = []
         for offset in range(0, len(code), 8):
@@ -675,7 +724,7 @@ def substitute_avr():
         if data >= 2**32:
             raise ValueError("Data must be less than 2^32")
 
-        sim.stdin.write(struct.pack("<BLQL", 3, rolling, fixed, data))
+        sim.stdin.write(struct.pack("<BLQL", 4, rolling, fixed, data))
         sim.stdin.flush()
         err = sim.stdout.read(1)[0]
         packet = sim.stdout.read(19)
@@ -692,7 +741,7 @@ def substitute_avr():
         if len(code) != 19:
             raise ValueError("Input must be 19 bytes long")
 
-        sim.stdin.write(bytes([6]))
+        sim.stdin.write(bytes([8]))
         sim.stdin.write(code)
         sim.stdin.flush()
         err, rolling, fixed, data = struct.unpack("<BLQL", sim.stdout.read(17))

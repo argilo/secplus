@@ -9,6 +9,66 @@
 
 #include "secplus.h"
 
+int encode(const uint32_t rolling, uint32_t fixed, uint8_t *symbols) {
+  uint32_t rolling_reversed = 0;
+
+  if (fixed >= 3486784401u) {
+    return -1;
+  }
+
+  for (int bit = 1; bit < 32; bit++) {
+    rolling_reversed |= ((rolling >> bit) & 1) << (32 - bit - 1);
+  }
+
+  for (int i = 38; i >= 0; i -= 2) {
+    symbols[i] = rolling_reversed % 3;
+    rolling_reversed /= 3;
+    symbols[i + 1] = fixed % 3;
+    fixed /= 3;
+  }
+
+  int acc = 0;
+  for (int i = 0; i < 40; i += 2) {
+    if (i == 20) {
+      acc = 0;
+    }
+
+    acc += symbols[i];
+    acc += symbols[i + 1];
+    symbols[i + 1] = acc % 3;
+  }
+
+  return 0;
+}
+
+int decode(const uint8_t *symbols, uint32_t *rolling, uint32_t *fixed) {
+  uint32_t rolling_reversed = 0;
+  *rolling = 0;
+  *fixed = 0;
+
+  int acc = 0;
+  int digit = 0;
+  for (int i = 0; i < 40; i += 2) {
+    if (i == 20) {
+      acc = 0;
+    }
+
+    digit = symbols[i];
+    rolling_reversed = (rolling_reversed * 3) + digit;
+    acc += digit;
+
+    digit = (60 + symbols[i + 1] - acc) % 3;
+    *fixed = (*fixed * 3) + digit;
+    acc += digit;
+  }
+
+  for (int bit = 0; bit < 32; bit++) {
+    *rolling |= ((rolling_reversed >> bit) & 1) << (32 - bit - 1);
+  }
+
+  return 0;
+}
+
 static void _v2_calc_parity(const uint64_t fixed, uint32_t *data) {
   uint32_t parity = (fixed >> 32) & 0xf;
 
