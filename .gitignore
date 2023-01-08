@@ -1,3 +1,4 @@
 *.pyc
-/libsecplus.so
-/src/secplus.o
+*.o
+*.so
+*.elf

@@ -10,6 +10,8 @@ jobs:
       matrix:
         python-version: ["3.6", "3.7", "3.8", "3.9", "3.10", "3.11"]
     steps:
+      - name: Install dependencies
+        run: sudo apt-get install -y gcc-avr avr-libc simulavr
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -20,6 +22,8 @@ jobs:
         run: |
           gcc -c -Wall -Werror -fpic -o src/secplus.o src/secplus.c
           gcc -shared -o libsecplus.so src/secplus.o
+      - name: Compile C library for avr
+        run: avr-gcc -mmcu=atmega328 -Wall -Werror -o test/avr_test.elf src/secplus.c test/avr_test.c
       - name: Test
         env:
           TEST_CYCLES: 50000

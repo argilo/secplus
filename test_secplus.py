@@ -22,6 +22,8 @@ import os
 import random
 import unittest
 import secplus
+import struct
+import subprocess
 from ctypes import *
 
 
@@ -613,12 +615,125 @@ def substitute_c():
     secplus.decode_wireline = decode_wireline
 
 
-if __name__ == '__main__':
-    result = unittest.main(exit=False)
+def substitute_avr():
+    sim = subprocess.Popen(["simulavr", "-d", "atmega328", "-f", "test/avr_test.elf", "-W", "0x20,-", "-R", "0x22,-", "-T", "exit"],
+                           stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
+    def encode_v2(rolling, fixed, data=None):
+        if data is None:
+            packet_len = 10
+            command = 1
+            data_c = 0
+        else:
+            if data >= 2**32:
+                raise ValueError("Data must be less than 2^32")
+
+            packet_len = 16
+            command = 2
+            data_c = data
+
+        sim.stdin.write(struct.pack("<BLQL", command, rolling, fixed, data_c))
+        sim.stdin.flush()
+        err = sim.stdout.read(1)[0]
+        packet = sim.stdout.read(packet_len)
+
+        if err != 0:
+            raise ValueError("Invalid input")
+
+        code = []
+        for byte in packet:
+            for bit in range(8):
+                code.append((byte >> (7 - bit)) & 1)
+        return code
+
+    secplus.encode_v2 = encode_v2
+
+    def decode_v2(code):
+        command = 4 if len(code) == 80 else 5
+
+        code_bytes = []
+        for offset in range(0, len(code), 8):
+            byte = 0
+            for bit in range(8):
+                byte |= code[offset + bit] << (7 - bit)
+            code_bytes.append(byte)
+        packet = bytes(code_bytes)
+
+        sim.stdin.write(bytes([command]))
+        sim.stdin.write(packet)
+        sim.stdin.flush()
+        err, rolling, fixed, data = struct.unpack("<BLQL", sim.stdout.read(17))
+
+        if err != 0:
+            raise ValueError(f"Invalid input")
+        return rolling, fixed, None if len(code) == 80 else data
+
+    secplus.decode_v2 = decode_v2
+
+    def encode_wireline(rolling, fixed, data):
+        if data >= 2**32:
+            raise ValueError("Data must be less than 2^32")
+
+        sim.stdin.write(struct.pack("<BLQL", 3, rolling, fixed, data))
+        sim.stdin.flush()
+        err = sim.stdout.read(1)[0]
+        packet = sim.stdout.read(19)
+
+        if err != 0:
+            raise ValueError("Invalid input")
+        return packet
+
+    secplus.encode_wireline = encode_wireline
+
+    def decode_wireline(code):
+        if not isinstance(code, bytes):
+            raise ValueError("Input must be bytes")
+        if len(code) != 19:
+            raise ValueError("Input must be 19 bytes long")
+
+        sim.stdin.write(bytes([6]))
+        sim.stdin.write(code)
+        sim.stdin.flush()
+        err, rolling, fixed, data = struct.unpack("<BLQL", sim.stdout.read(17))
+
+        if err != 0:
+            raise ValueError("Invalid input")
+        return rolling, fixed, data
+
+    secplus.decode_wireline = decode_wireline
+
+    return sim
+
+
+def shutdown_avr(sim):
+    sim.stdin.write(bytes([0]))
+    sim.stdin.flush()
+    sim.wait()
+
+
+if __name__ == '__main__':
+    status = 0
+
+    print("Testing Python:")
+    result = unittest.main(exit=False)
     if not result.result.wasSuccessful():
-        exit(1)
+        status = 1
 
     substitute_c()
 
-    unittest.main()
+    print("Testing C:")
+    result = unittest.main(exit=False)
+    if not result.result.wasSuccessful():
+        status = 1
+
+    process = substitute_avr()
+
+    print("Testing C in AVR simulator:")
+    TestSecplus.test_cycles //= 100
+    result = unittest.main(exit=False)
+    if not result.result.wasSuccessful():
+        status = 1
+
+    shutdown_avr(process)
+
+    exit(status)
