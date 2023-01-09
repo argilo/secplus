@@ -11,8 +11,8 @@
 
 int8_t encode_v1(const uint32_t rolling, uint32_t fixed, uint8_t *symbols) {
   uint32_t rolling_reversed = 0;
-  int i;
-  int acc;
+  int8_t i;
+  uint8_t acc;
 
   if (fixed >= 3486784401u) {
     return -1;
@@ -45,9 +45,9 @@ int8_t encode_v1(const uint32_t rolling, uint32_t fixed, uint8_t *symbols) {
 
 int8_t decode_v1(const uint8_t *symbols, uint32_t *rolling, uint32_t *fixed) {
   uint32_t rolling_reversed = 0;
-  int acc = 0;
-  int digit = 0;
-  int i;
+  uint8_t acc = 0;
+  uint8_t digit = 0;
+  int8_t i;
 
   *rolling = 0;
   *fixed = 0;
@@ -75,7 +75,7 @@ int8_t decode_v1(const uint8_t *symbols, uint32_t *rolling, uint32_t *fixed) {
 
 static void _v2_calc_parity(const uint64_t fixed, uint32_t *data) {
   uint32_t parity = (fixed >> 32) & 0xf;
-  int offset;
+  int8_t offset;
 
   *data &= 0xffff0fff;
   for (offset = 0; offset < 32; offset += 4) {
@@ -86,7 +86,7 @@ static void _v2_calc_parity(const uint64_t fixed, uint32_t *data) {
 
 static int8_t _v2_check_parity(const uint64_t fixed, const uint32_t data) {
   uint32_t parity = (fixed >> 32) & 0xf;
-  int offset;
+  int8_t offset;
 
   for (offset = 0; offset < 32; offset += 4) {
     parity ^= ((data >> offset) & 0xf);
@@ -101,7 +101,7 @@ static int8_t _v2_check_parity(const uint64_t fixed, const uint32_t data) {
 
 static int8_t _decode_v2_rolling(const uint32_t rolling1,
                                  const uint32_t rolling2, uint32_t *rolling) {
-  int bit;
+  int8_t bit;
   uint32_t rolling_reversed;
 
   rolling_reversed = (rolling2 >> 8) & 3;
@@ -169,7 +169,7 @@ static int8_t _v2_combine_halves(const uint8_t frame_type,
 static void _encode_v2_rolling(const uint32_t rolling, uint32_t *rolling1,
                                uint32_t *rolling2) {
   uint32_t rolling_reversed = 0;
-  int bit;
+  int8_t bit;
 
   for (bit = 0; bit < 28; bit++) {
     rolling_reversed |= ((rolling >> bit) & 1) << (28 - bit - 1);
@@ -226,9 +226,9 @@ static void _v2_scramble(const uint32_t *parts, const uint8_t frame_type,
                          uint8_t *packet_half) {
   const int8_t order = _ORDER[packet_half[0] >> 4];
   const int8_t invert = _INVERT[packet_half[0] & 0xf];
-  int i;
-  int out_offset = 10;
-  const int end = (frame_type == 0 ? 8 : 0);
+  int8_t i;
+  uint8_t out_offset = 10;
+  const int8_t end = (frame_type == 0 ? 8 : 0);
   uint32_t parts_permuted[3];
 
   parts_permuted[0] =
@@ -254,9 +254,9 @@ static int8_t _v2_unscramble(const uint8_t frame_type, const uint8_t indicator,
                              const uint8_t *packet_half, uint32_t *parts) {
   const int8_t order = _ORDER[indicator >> 4];
   const int8_t invert = _INVERT[indicator & 0xf];
-  int i;
-  int out_offset = 10;
-  const int end = (frame_type == 0 ? 8 : 0);
+  int8_t i;
+  uint8_t out_offset = 10;
+  const int8_t end = (frame_type == 0 ? 8 : 0);
   uint32_t parts_permuted[3] = {0, 0, 0};
 
   if ((order == -1) || (invert == -1)) {
@@ -307,7 +307,7 @@ static int8_t _decode_v2_half_parts(const uint8_t frame_type,
                                     uint32_t *rolling, uint32_t *fixed,
                                     uint16_t *data) {
   int8_t err = 0;
-  int i;
+  int8_t i;
   uint32_t parts[3];
 
   err = _v2_unscramble(frame_type, indicator, packet_half, parts);
@@ -345,7 +345,7 @@ static void _encode_v2_half(const uint32_t rolling, const uint32_t fixed,
   packet_half[0] |= (frame_type << 6);
 }
 
-int _v2_check_limits(const uint32_t rolling, const uint64_t fixed) {
+int8_t _v2_check_limits(const uint32_t rolling, const uint64_t fixed) {
   if ((rolling >> 28) != 0) {
     return -1;
   }
@@ -360,9 +360,9 @@ int _v2_check_limits(const uint32_t rolling, const uint64_t fixed) {
 int8_t encode_v2(const uint32_t rolling, const uint64_t fixed, uint32_t data,
                  const uint8_t frame_type, uint8_t *packet) {
   int8_t err = 0;
-  int i;
+  int8_t i;
   uint32_t rolling1, rolling2;
-  const int packet_len = (frame_type == 0 ? 10 : 16);
+  const int8_t packet_len = (frame_type == 0 ? 10 : 16);
 
   err = _v2_check_limits(rolling, fixed);
   if (err < 0) {
@@ -408,7 +408,7 @@ int8_t decode_v2(uint8_t frame_type, const uint8_t *packet, uint32_t *rolling,
   uint32_t rolling1, rolling2;
   uint32_t fixed1, fixed2;
   uint16_t data1, data2;
-  const int packet_len = (frame_type == 0 ? 10 : 16);
+  const uint8_t packet_len = (frame_type == 0 ? 10 : 16);
 
   err = _decode_v2_half(frame_type, &packet[0], &rolling1, &fixed1, &data1);
   if (err < 0) {
@@ -438,7 +438,7 @@ static void _encode_wireline_half(const uint32_t rolling, const uint32_t fixed,
 int8_t encode_wireline(const uint32_t rolling, const uint64_t fixed,
                        uint32_t data, uint8_t *packet) {
   int8_t err = 0;
-  int i;
+  int8_t i;
   uint32_t rolling1, rolling2;
 
   err = _v2_check_limits(rolling, fixed);
