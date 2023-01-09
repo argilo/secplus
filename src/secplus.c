@@ -99,6 +99,57 @@ static int8_t _v2_check_parity(const uint64_t fixed, const uint32_t data) {
   return 0;
 }
 
+static void _encode_v2_rolling(const uint32_t rolling, uint32_t *rolling1,
+                               uint32_t *rolling2) {
+  uint32_t rolling_reversed = 0;
+  int8_t bit;
+
+  for (bit = 0; bit < 28; bit++) {
+    rolling_reversed |= ((rolling >> bit) & 1) << (28 - bit - 1);
+  }
+
+  *rolling1 = rolling_reversed % 3;
+  rolling_reversed /= 3;
+  *rolling1 |= (rolling_reversed % 3) << 2;
+  rolling_reversed /= 3;
+  *rolling1 |= (rolling_reversed % 3) << 4;
+  rolling_reversed /= 3;
+  *rolling1 |= (rolling_reversed % 3) << 6;
+  rolling_reversed /= 3;
+
+  *rolling2 = rolling_reversed % 3;
+  rolling_reversed /= 3;
+  *rolling2 |= (rolling_reversed % 3) << 2;
+  rolling_reversed /= 3;
+  *rolling2 |= (rolling_reversed % 3) << 4;
+  rolling_reversed /= 3;
+  *rolling2 |= (rolling_reversed % 3) << 6;
+  rolling_reversed /= 3;
+
+  *rolling1 |= (rolling_reversed % 3) << 10;
+  rolling_reversed /= 3;
+  *rolling1 |= (rolling_reversed % 3) << 12;
+  rolling_reversed /= 3;
+  *rolling1 |= (rolling_reversed % 3) << 14;
+  rolling_reversed /= 3;
+  *rolling1 |= (rolling_reversed % 3) << 16;
+  rolling_reversed /= 3;
+
+  *rolling2 |= (rolling_reversed % 3) << 10;
+  rolling_reversed /= 3;
+  *rolling2 |= (rolling_reversed % 3) << 12;
+  rolling_reversed /= 3;
+  *rolling2 |= (rolling_reversed % 3) << 14;
+  rolling_reversed /= 3;
+  *rolling2 |= (rolling_reversed % 3) << 16;
+  rolling_reversed /= 3;
+
+  *rolling1 |= (rolling_reversed % 3) << 8;
+  rolling_reversed /= 3;
+
+  *rolling2 |= (rolling_reversed % 3) << 8;
+}
+
 static int8_t _decode_v2_rolling(const uint32_t rolling1,
                                  const uint32_t rolling2, uint32_t *rolling) {
   int8_t bit;
@@ -164,57 +215,6 @@ static int8_t _v2_combine_halves(const uint8_t frame_type,
   }
 
   return 0;
-}
-
-static void _encode_v2_rolling(const uint32_t rolling, uint32_t *rolling1,
-                               uint32_t *rolling2) {
-  uint32_t rolling_reversed = 0;
-  int8_t bit;
-
-  for (bit = 0; bit < 28; bit++) {
-    rolling_reversed |= ((rolling >> bit) & 1) << (28 - bit - 1);
-  }
-
-  *rolling1 = rolling_reversed % 3;
-  rolling_reversed /= 3;
-  *rolling1 |= (rolling_reversed % 3) << 2;
-  rolling_reversed /= 3;
-  *rolling1 |= (rolling_reversed % 3) << 4;
-  rolling_reversed /= 3;
-  *rolling1 |= (rolling_reversed % 3) << 6;
-  rolling_reversed /= 3;
-
-  *rolling2 = rolling_reversed % 3;
-  rolling_reversed /= 3;
-  *rolling2 |= (rolling_reversed % 3) << 2;
-  rolling_reversed /= 3;
-  *rolling2 |= (rolling_reversed % 3) << 4;
-  rolling_reversed /= 3;
-  *rolling2 |= (rolling_reversed % 3) << 6;
-  rolling_reversed /= 3;
-
-  *rolling1 |= (rolling_reversed % 3) << 10;
-  rolling_reversed /= 3;
-  *rolling1 |= (rolling_reversed % 3) << 12;
-  rolling_reversed /= 3;
-  *rolling1 |= (rolling_reversed % 3) << 14;
-  rolling_reversed /= 3;
-  *rolling1 |= (rolling_reversed % 3) << 16;
-  rolling_reversed /= 3;
-
-  *rolling2 |= (rolling_reversed % 3) << 10;
-  rolling_reversed /= 3;
-  *rolling2 |= (rolling_reversed % 3) << 12;
-  rolling_reversed /= 3;
-  *rolling2 |= (rolling_reversed % 3) << 14;
-  rolling_reversed /= 3;
-  *rolling2 |= (rolling_reversed % 3) << 16;
-  rolling_reversed /= 3;
-
-  *rolling1 |= (rolling_reversed % 3) << 8;
-  rolling_reversed /= 3;
-
-  *rolling2 |= (rolling_reversed % 3) << 8;
 }
 
 static const int8_t _ORDER[16] = {9,  33, 6, -1, 24, 18, 36, -1,
@@ -332,6 +332,18 @@ static int8_t _decode_v2_half_parts(const uint8_t frame_type,
   return 0;
 }
 
+int8_t _v2_check_limits(const uint32_t rolling, const uint64_t fixed) {
+  if ((rolling >> 28) != 0) {
+    return -1;
+  }
+
+  if ((fixed >> 40) != 0) {
+    return -1;
+  }
+
+  return 0;
+}
+
 static void _encode_v2_half(const uint32_t rolling, const uint32_t fixed,
                             const uint16_t data, const uint8_t frame_type,
                             uint8_t *packet_half) {
@@ -343,18 +355,6 @@ static void _encode_v2_half(const uint32_t rolling, const uint32_t fixed,
 
   /* set frame type */
   packet_half[0] |= (frame_type << 6);
-}
-
-int8_t _v2_check_limits(const uint32_t rolling, const uint64_t fixed) {
-  if ((rolling >> 28) != 0) {
-    return -1;
-  }
-
-  if ((fixed >> 40) != 0) {
-    return -1;
-  }
-
-  return 0;
 }
 
 int8_t encode_v2(const uint32_t rolling, const uint64_t fixed, uint32_t data,
