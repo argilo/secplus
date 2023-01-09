@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-    Send Security+ v2
+    Send Security+ v1
 """
 
 # pylint: disable=invalid-name
@@ -18,15 +18,16 @@ import secplus
 __author__ = "Peter Shipley"
 
 verbose = 0
+noop = 0
 
-# bit len = 250
-# 250 * 10^-6 = .0002500
-# 1/.0002500  = 4000
-DRATE = 4000
+
+# bit len = 500
+# 500 * 10^-6 = .00050
+# 1/.00050  = 2000
+DRATE = 2000
 CMD_REPEAT = 1
 DEFAULT_RF_FREQ = 315000000
 
-DEFAULT_BUTTON = 91
 
 def bitstring_to_bytes8(s):
     return int(s, 2).to_bytes(len(s) // 8, byteorder='big')
@@ -67,10 +68,10 @@ def init_RfCat(data_len=60, freq=None, chan_bw=240000, tx_power=96, dat_rate=DRA
 
     return rfc
 
-def send_secplus_v2(fixed_dat=1234567890, freq=315000000, roll_dat=123456789, cmd_repeat=1):
+def send_secplus_v1(fixed_dat=1234567890, freq=315000000, roll_dat=123456789, cmd_repeat=1):
 
     # Join the prefix and the data for the full pwm key, must repeat 3 time
-    pkt_seq = [0] * 100 + secplus.encode_v2_manchester(roll_dat, fixed_dat) * 3 + [0] * 100
+    pkt_seq = [0]*100 + secplus.encode_ook(roll_dat, fixed_dat, fast=False)*4 + [0]*100
 
     bit_seq = "".join(map(str, pkt_seq))
     bit_seq += "0" * (len(bit_seq) % 8)    # pad to bits
@@ -80,6 +81,9 @@ def send_secplus_v2(fixed_dat=1234567890, freq=315000000, roll_dat=123456789, cm
 
     # Convert the data to bin
     rf_data = bitstring_to_bytes8(bit_seq)
+
+    if noop:
+        return 0
 
     d = init_RfCat(freq=freq, data_len=len(bit_seq))
 
@@ -108,25 +112,18 @@ def get_args():
                         default=DEFAULT_RF_FREQ,
                         help="Set Frequency [default=%(default)r]")
 
-    parser.add_argument("--rolling", dest="rolling", type=int,
+    parser.add_argument('-r', "--rolling", dest="rolling", type=int,
                         default=123456789,
                         help="Set Rolling code [default=%(default)r]")
 
-    parser.add_argument("-b", "--button", metavar='button_id',
-                        dest="button",
-                        default=0,
-                        help="Button [default=91]")
-
-    fixed_grp = parser.add_mutually_exclusive_group()
-
-    fixed_grp.add_argument("-f", "--fixed", metavar='fixed_code', dest="fixed",
+    parser.add_argument("-f", "--fixed", metavar='fixed_code', dest="fixed",
                            type=int, default=1234567890,
                            help="Set Fixed code [default=%(default)r]")
 
-    fixed_grp.add_argument("-i", "--id", metavar='remote_id', dest="id",
-                           default=None,
-                           type=int,
-                           help="Remote-ID")
+    parser.add_argument("-n", "--noop", dest="noop", action='store_true',
+                           help="No op/Do not transmit")
+
+    # fixed_grp = parser.add_mutually_exclusive_group()
 
     parser.add_argument('-v', '--verbose', dest="verb",
                             default=0,
@@ -138,25 +135,16 @@ if __name__ == "__main__":
 
     args = get_args()
 
+    noop = args.noop
+
     if args.verb:
         verbose = args.verb
 
-    if args.id:
+    if args.rolling >= 4294967296:
+        raise ValueError("Rolling code must be less than 2^32")
+    if args.fixed >= 3486784401:
+        raise ValueError("Fixed code must be less than 3^20")
 
-        butt = args.button or DEFAULT_BUTTON
-
-        # (3**28)>>32 = 5326
-        if butt > 5326:
-            raise ValueError("Button code must be less than 5326")
-
-        # (3**28) & 0xffffffff = 1796636465
-        if args.id > 1796636465:
-            raise ValueError("Remote ID must be less than 1796636465")
-
-        fixed_code = (args.id & 0xffffffff) | (butt << 32)
-    else:
-        fixed_code = args.fixed
-
-    send_secplus_v2(fixed_dat=fixed_code, freq=args.freq, roll_dat=args.rolling)
+    send_secplus_v1(fixed_dat=args.fixed, freq=args.freq, roll_dat=args.rolling)
 
     sys.exit(0)
