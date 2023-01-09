@@ -9,7 +9,7 @@
 
 #include "secplus.h"
 
-int encode_v1(const uint32_t rolling, uint32_t fixed, uint8_t *symbols) {
+int8_t encode_v1(const uint32_t rolling, uint32_t fixed, uint8_t *symbols) {
   uint32_t rolling_reversed = 0;
   int i;
   int acc;
@@ -43,7 +43,7 @@ int encode_v1(const uint32_t rolling, uint32_t fixed, uint8_t *symbols) {
   return 0;
 }
 
-int decode_v1(const uint8_t *symbols, uint32_t *rolling, uint32_t *fixed) {
+int8_t decode_v1(const uint8_t *symbols, uint32_t *rolling, uint32_t *fixed) {
   uint32_t rolling_reversed = 0;
   int acc = 0;
   int digit = 0;
@@ -84,7 +84,7 @@ static void _v2_calc_parity(const uint64_t fixed, uint32_t *data) {
   *data |= (parity << 12);
 }
 
-static int _v2_check_parity(const uint64_t fixed, const uint32_t data) {
+static int8_t _v2_check_parity(const uint64_t fixed, const uint32_t data) {
   uint32_t parity = (fixed >> 32) & 0xf;
   int offset;
 
@@ -99,8 +99,8 @@ static int _v2_check_parity(const uint64_t fixed, const uint32_t data) {
   return 0;
 }
 
-static int _decode_v2_rolling(const uint32_t rolling1, const uint32_t rolling2,
-                              uint32_t *rolling) {
+static int8_t _decode_v2_rolling(const uint32_t rolling1,
+                                 const uint32_t rolling2, uint32_t *rolling) {
   int bit;
   uint32_t rolling_reversed;
 
@@ -139,12 +139,13 @@ static int _decode_v2_rolling(const uint32_t rolling1, const uint32_t rolling2,
   return 0;
 }
 
-static int _v2_combine_halves(const uint8_t frame_type, const uint32_t rolling1,
-                              const uint32_t rolling2, const uint32_t fixed1,
-                              const uint32_t fixed2, const uint16_t data1,
-                              const uint16_t data2, uint32_t *rolling,
-                              uint64_t *fixed, uint32_t *data) {
-  int err = 0;
+static int8_t _v2_combine_halves(const uint8_t frame_type,
+                                 const uint32_t rolling1,
+                                 const uint32_t rolling2, const uint32_t fixed1,
+                                 const uint32_t fixed2, const uint16_t data1,
+                                 const uint16_t data2, uint32_t *rolling,
+                                 uint64_t *fixed, uint32_t *data) {
+  int8_t err = 0;
 
   err = _decode_v2_rolling(rolling1, rolling2, rolling);
   if (err < 0) {
@@ -249,8 +250,8 @@ static void _v2_scramble(const uint32_t *parts, const uint8_t frame_type,
   }
 }
 
-static int _v2_unscramble(const uint8_t frame_type, const uint8_t indicator,
-                          const uint8_t *packet_half, uint32_t *parts) {
+static int8_t _v2_unscramble(const uint8_t frame_type, const uint8_t indicator,
+                             const uint8_t *packet_half, uint32_t *parts) {
   const int8_t order = _ORDER[indicator >> 4];
   const int8_t invert = _INVERT[indicator & 0xf];
   int i;
@@ -300,11 +301,12 @@ static void _encode_v2_half_parts(const uint32_t rolling, const uint32_t fixed,
   _v2_scramble(parts, frame_type, packet_half);
 }
 
-static int _decode_v2_half_parts(const uint8_t frame_type,
-                                 const uint8_t indicator,
-                                 const uint8_t *packet_half, uint32_t *rolling,
-                                 uint32_t *fixed, uint16_t *data) {
-  int err = 0;
+static int8_t _decode_v2_half_parts(const uint8_t frame_type,
+                                    const uint8_t indicator,
+                                    const uint8_t *packet_half,
+                                    uint32_t *rolling, uint32_t *fixed,
+                                    uint16_t *data) {
+  int8_t err = 0;
   int i;
   uint32_t parts[3];
 
@@ -355,9 +357,9 @@ int _v2_check_limits(const uint32_t rolling, const uint64_t fixed) {
   return 0;
 }
 
-int encode_v2(const uint32_t rolling, const uint64_t fixed, uint32_t data,
-              const uint8_t frame_type, uint8_t *packet) {
-  int err = 0;
+int8_t encode_v2(const uint32_t rolling, const uint64_t fixed, uint32_t data,
+                 const uint8_t frame_type, uint8_t *packet) {
+  int8_t err = 0;
   int i;
   uint32_t rolling1, rolling2;
   const int packet_len = (frame_type == 0 ? 10 : 16);
@@ -381,9 +383,10 @@ int encode_v2(const uint32_t rolling, const uint64_t fixed, uint32_t data,
   return 0;
 }
 
-static int _decode_v2_half(const uint8_t frame_type, const uint8_t *packet_half,
-                           uint32_t *rolling, uint32_t *fixed, uint16_t *data) {
-  int err = 0;
+static int8_t _decode_v2_half(const uint8_t frame_type,
+                              const uint8_t *packet_half, uint32_t *rolling,
+                              uint32_t *fixed, uint16_t *data) {
+  int8_t err = 0;
   const uint8_t indicator = (packet_half[0] << 2) | (packet_half[1] >> 6);
 
   if ((packet_half[0] >> 6) != frame_type) {
@@ -399,9 +402,9 @@ static int _decode_v2_half(const uint8_t frame_type, const uint8_t *packet_half,
   return 0;
 }
 
-int decode_v2(uint8_t frame_type, const uint8_t *packet, uint32_t *rolling,
-              uint64_t *fixed, uint32_t *data) {
-  int err = 0;
+int8_t decode_v2(uint8_t frame_type, const uint8_t *packet, uint32_t *rolling,
+                 uint64_t *fixed, uint32_t *data) {
+  int8_t err = 0;
   uint32_t rolling1, rolling2;
   uint32_t fixed1, fixed2;
   uint16_t data1, data2;
@@ -432,9 +435,9 @@ static void _encode_wireline_half(const uint32_t rolling, const uint32_t fixed,
   _encode_v2_half_parts(rolling, fixed, data, 1, packet_half);
 }
 
-int encode_wireline(const uint32_t rolling, const uint64_t fixed, uint32_t data,
-                    uint8_t *packet) {
-  int err = 0;
+int8_t encode_wireline(const uint32_t rolling, const uint64_t fixed,
+                       uint32_t data, uint8_t *packet) {
+  int8_t err = 0;
   int i;
   uint32_t rolling1, rolling2;
 
@@ -459,9 +462,10 @@ int encode_wireline(const uint32_t rolling, const uint64_t fixed, uint32_t data,
   return 0;
 }
 
-static int _decode_wireline_half(const uint8_t *packet_half, uint32_t *rolling,
-                                 uint32_t *fixed, uint16_t *data) {
-  int err = 0;
+static int8_t _decode_wireline_half(const uint8_t *packet_half,
+                                    uint32_t *rolling, uint32_t *fixed,
+                                    uint16_t *data) {
+  int8_t err = 0;
   const uint8_t indicator = packet_half[0];
 
   if ((packet_half[1] >> 6) != 0) {
@@ -476,9 +480,9 @@ static int _decode_wireline_half(const uint8_t *packet_half, uint32_t *rolling,
   return 0;
 }
 
-int decode_wireline(const uint8_t *packet, uint32_t *rolling, uint64_t *fixed,
-                    uint32_t *data) {
-  int err = 0;
+int8_t decode_wireline(const uint8_t *packet, uint32_t *rolling,
+                       uint64_t *fixed, uint32_t *data) {
+  int8_t err = 0;
   uint32_t rolling1, rolling2;
   uint32_t fixed1, fixed2;
   uint16_t data1, data2;

@@ -538,6 +538,12 @@ class TestSecplus(unittest.TestCase):
 
 def substitute_c():
     libsecplus = cdll.LoadLibrary("./libsecplus.so")
+    libsecplus.encode_v1.restype = c_int8
+    libsecplus.decode_v1.restype = c_int8
+    libsecplus.encode_v2.restype = c_int8
+    libsecplus.decode_v2.restype = c_int8
+    libsecplus.encode_wireline.restype = c_int8
+    libsecplus.decode_wireline.restype = c_int8
 
     def encode(rolling, fixed):
         if rolling >= 2**32:

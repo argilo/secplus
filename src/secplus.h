@@ -16,22 +16,22 @@ extern "C" {
 
 #include <stdint.h>
 
-extern int encode_v1(uint32_t rolling, uint32_t fixed, uint8_t *symbols);
+extern int8_t encode_v1(uint32_t rolling, uint32_t fixed, uint8_t *symbols);
 
-extern int decode_v1(const uint8_t *symbols, uint32_t *rolling,
-                     uint32_t *fixed);
+extern int8_t decode_v1(const uint8_t *symbols, uint32_t *rolling,
+                        uint32_t *fixed);
 
-extern int encode_v2(uint32_t rolling, uint64_t fixed, uint32_t data,
-                     uint8_t frame_type, uint8_t *packet);
+extern int8_t encode_v2(uint32_t rolling, uint64_t fixed, uint32_t data,
+                        uint8_t frame_type, uint8_t *packet);
 
-extern int decode_v2(uint8_t frame_type, const uint8_t *packet,
-                     uint32_t *rolling, uint64_t *fixed, uint32_t *data);
+extern int8_t decode_v2(uint8_t frame_type, const uint8_t *packet,
+                        uint32_t *rolling, uint64_t *fixed, uint32_t *data);
 
-extern int encode_wireline(uint32_t rolling, uint64_t fixed, uint32_t data,
-                           uint8_t *packet);
+extern int8_t encode_wireline(uint32_t rolling, uint64_t fixed, uint32_t data,
+                              uint8_t *packet);
 
-extern int decode_wireline(const uint8_t *packet, uint32_t *rolling,
-                           uint64_t *fixed, uint32_t *data);
+extern int8_t decode_wireline(const uint8_t *packet, uint32_t *rolling,
+                              uint64_t *fixed, uint32_t *data);
 
 #ifdef __cplusplus
 }
