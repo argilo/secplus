@@ -23,7 +23,7 @@ jobs:
           gcc --std=c90 -pedantic -c -Wall -Werror -fpic -o src/secplus.o src/secplus.c
           gcc --std=c90 -pedantic -shared -o libsecplus.so src/secplus.o
       - name: Compile C library for AVR
-        run: avr-gcc -mmcu=atmega328 -Wall -Werror -o test/avr_test.elf src/secplus.c test/avr_test.c
+        run: avr-gcc -mmcu=atmega328 -Os -Wall -Werror -o test/avr_test.elf src/secplus.c test/avr_test.c
       - name: Test
         env:
           TEST_CYCLES: 50000
