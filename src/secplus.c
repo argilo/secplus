@@ -102,47 +102,34 @@ static int8_t _v2_check_parity(const uint64_t fixed, const uint32_t data) {
 static void _encode_v2_rolling(const uint32_t rolling, uint32_t *rolling1,
                                uint32_t *rolling2) {
   uint32_t rolling_reversed = 0;
-  int8_t bit;
+  int8_t i;
 
-  for (bit = 0; bit < 28; bit++) {
-    rolling_reversed |= ((rolling >> bit) & 1) << (28 - bit - 1);
+  for (i = 0; i < 28; i++) {
+    rolling_reversed |= ((rolling >> i) & 1) << (28 - i - 1);
   }
 
-  *rolling1 = rolling_reversed % 3;
-  rolling_reversed /= 3;
-  *rolling1 |= (rolling_reversed % 3) << 2;
-  rolling_reversed /= 3;
-  *rolling1 |= (rolling_reversed % 3) << 4;
-  rolling_reversed /= 3;
-  *rolling1 |= (rolling_reversed % 3) << 6;
-  rolling_reversed /= 3;
+  *rolling1 = 0;
+  *rolling2 = 0;
 
-  *rolling2 = rolling_reversed % 3;
-  rolling_reversed /= 3;
-  *rolling2 |= (rolling_reversed % 3) << 2;
-  rolling_reversed /= 3;
-  *rolling2 |= (rolling_reversed % 3) << 4;
-  rolling_reversed /= 3;
-  *rolling2 |= (rolling_reversed % 3) << 6;
-  rolling_reversed /= 3;
+  for (i = 0; i < 8; i += 2) {
+    *rolling1 |= rolling_reversed % 3 << i;
+    rolling_reversed /= 3;
+  }
 
-  *rolling1 |= (rolling_reversed % 3) << 10;
-  rolling_reversed /= 3;
-  *rolling1 |= (rolling_reversed % 3) << 12;
-  rolling_reversed /= 3;
-  *rolling1 |= (rolling_reversed % 3) << 14;
-  rolling_reversed /= 3;
-  *rolling1 |= (rolling_reversed % 3) << 16;
-  rolling_reversed /= 3;
+  for (i = 0; i < 8; i += 2) {
+    *rolling2 |= rolling_reversed % 3 << i;
+    rolling_reversed /= 3;
+  }
 
-  *rolling2 |= (rolling_reversed % 3) << 10;
-  rolling_reversed /= 3;
-  *rolling2 |= (rolling_reversed % 3) << 12;
-  rolling_reversed /= 3;
-  *rolling2 |= (rolling_reversed % 3) << 14;
-  rolling_reversed /= 3;
-  *rolling2 |= (rolling_reversed % 3) << 16;
-  rolling_reversed /= 3;
+  for (i = 10; i < 18; i += 2) {
+    *rolling1 |= rolling_reversed % 3 << i;
+    rolling_reversed /= 3;
+  }
+
+  for (i = 10; i < 18; i += 2) {
+    *rolling2 |= rolling_reversed % 3 << i;
+    rolling_reversed /= 3;
+  }
 
   *rolling1 |= (rolling_reversed % 3) << 8;
   rolling_reversed /= 3;
@@ -152,39 +139,35 @@ static void _encode_v2_rolling(const uint32_t rolling, uint32_t *rolling1,
 
 static int8_t _decode_v2_rolling(const uint32_t rolling1,
                                  const uint32_t rolling2, uint32_t *rolling) {
-  int8_t bit;
+  int8_t i;
   uint32_t rolling_reversed;
 
   rolling_reversed = (rolling2 >> 8) & 3;
   rolling_reversed = (rolling_reversed * 3) + ((rolling1 >> 8) & 3);
 
-  rolling_reversed = (rolling_reversed * 3) + ((rolling2 >> 16) & 3);
-  rolling_reversed = (rolling_reversed * 3) + ((rolling2 >> 14) & 3);
-  rolling_reversed = (rolling_reversed * 3) + ((rolling2 >> 12) & 3);
-  rolling_reversed = (rolling_reversed * 3) + ((rolling2 >> 10) & 3);
+  for (i = 16; i >= 10; i -= 2) {
+    rolling_reversed = (rolling_reversed * 3) + ((rolling2 >> i) & 3);
+  }
 
-  rolling_reversed = (rolling_reversed * 3) + ((rolling1 >> 16) & 3);
-  rolling_reversed = (rolling_reversed * 3) + ((rolling1 >> 14) & 3);
-  rolling_reversed = (rolling_reversed * 3) + ((rolling1 >> 12) & 3);
-  rolling_reversed = (rolling_reversed * 3) + ((rolling1 >> 10) & 3);
+  for (i = 16; i >= 10; i -= 2) {
+    rolling_reversed = (rolling_reversed * 3) + ((rolling1 >> i) & 3);
+  }
 
-  rolling_reversed = (rolling_reversed * 3) + ((rolling2 >> 6) & 3);
-  rolling_reversed = (rolling_reversed * 3) + ((rolling2 >> 4) & 3);
-  rolling_reversed = (rolling_reversed * 3) + ((rolling2 >> 2) & 3);
-  rolling_reversed = (rolling_reversed * 3) + (rolling2 & 3);
+  for (i = 6; i >= 0; i -= 2) {
+    rolling_reversed = (rolling_reversed * 3) + ((rolling2 >> i) & 3);
+  }
 
-  rolling_reversed = (rolling_reversed * 3) + ((rolling1 >> 6) & 3);
-  rolling_reversed = (rolling_reversed * 3) + ((rolling1 >> 4) & 3);
-  rolling_reversed = (rolling_reversed * 3) + ((rolling1 >> 2) & 3);
-  rolling_reversed = (rolling_reversed * 3) + (rolling1 & 3);
+  for (i = 6; i >= 0; i -= 2) {
+    rolling_reversed = (rolling_reversed * 3) + ((rolling1 >> i) & 3);
+  }
 
   if (rolling_reversed >= 0x10000000) {
     return -1;
   }
 
   *rolling = 0;
-  for (bit = 0; bit < 28; bit++) {
-    *rolling |= ((rolling_reversed >> bit) & 1) << (28 - bit - 1);
+  for (i = 0; i < 28; i++) {
+    *rolling |= ((rolling_reversed >> i) & 1) << (28 - i - 1);
   }
 
   return 0;
