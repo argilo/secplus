@@ -645,7 +645,7 @@ def substitute_c():
 
 
 def substitute_avr():
-    sim = subprocess.Popen(["simulavr", "-d", "atmega328", "-f", "test/avr_test.elf", "-W", "0x20,-", "-R", "0x22,-", "-T", "exit"],
+    sim = subprocess.Popen(["simulavr", "-d", "attiny85", "-f", "test/avr_test.elf", "-W", "0x20,-", "-R", "0x22,-", "-T", "exit"],
                            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     def encode(rolling, fixed):
