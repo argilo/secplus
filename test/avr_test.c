@@ -56,10 +56,7 @@ int main() {
   uint64_t fixed_v2;
   uint32_t data;
 
-  uint8_t v1_symbols[40];
-  uint8_t v2_short_code[10];
-  uint8_t v2_long_code[16];
-  uint8_t wireline_code[19];
+  uint8_t buf[40];
 
   while (cont) {
     switch (special_input_port) {
@@ -69,60 +66,60 @@ int main() {
     case 1:
       get_uint32(&rolling);
       get_uint32(&fixed_v1);
-      err = encode_v1(rolling, fixed_v1, v1_symbols);
+      err = encode_v1(rolling, fixed_v1, buf);
       put_err(err);
-      put_bytes(v1_symbols, 40);
+      put_bytes(buf, 40);
       break;
     case 2:
       get_uint32(&rolling);
       get_uint64(&fixed_v2);
       get_uint32(&data);
-      err = encode_v2(rolling, fixed_v2, data, 0, v2_short_code);
+      err = encode_v2(rolling, fixed_v2, data, 0, buf);
       put_err(err);
-      put_bytes(v2_short_code, 10);
+      put_bytes(buf, 10);
       break;
     case 3:
       get_uint32(&rolling);
       get_uint64(&fixed_v2);
       get_uint32(&data);
-      err = encode_v2(rolling, fixed_v2, data, 1, v2_long_code);
+      err = encode_v2(rolling, fixed_v2, data, 1, buf);
       put_err(err);
-      put_bytes(v2_long_code, 16);
+      put_bytes(buf, 16);
       break;
     case 4:
       get_uint32(&rolling);
       get_uint64(&fixed_v2);
       get_uint32(&data);
-      err = encode_wireline(rolling, fixed_v2, data, wireline_code);
+      err = encode_wireline(rolling, fixed_v2, data, buf);
       put_err(err);
-      put_bytes(wireline_code, 19);
+      put_bytes(buf, 19);
       break;
     case 5:
-      get_bytes(v1_symbols, 40);
-      err = decode_v1(v1_symbols, &rolling, &fixed_v1);
+      get_bytes(buf, 40);
+      err = decode_v1(buf, &rolling, &fixed_v1);
       put_err(err);
       put_uint32(rolling);
       put_uint32(fixed_v1);
       break;
     case 6:
-      get_bytes(v2_short_code, 10);
-      err = decode_v2(0, v2_short_code, &rolling, &fixed_v2, &data);
+      get_bytes(buf, 10);
+      err = decode_v2(0, buf, &rolling, &fixed_v2, &data);
       put_err(err);
       put_uint32(rolling);
       put_uint64(fixed_v2);
       put_uint32(data);
       break;
     case 7:
-      get_bytes(v2_long_code, 16);
-      err = decode_v2(1, v2_long_code, &rolling, &fixed_v2, &data);
+      get_bytes(buf, 16);
+      err = decode_v2(1, buf, &rolling, &fixed_v2, &data);
       put_err(err);
       put_uint32(rolling);
       put_uint64(fixed_v2);
       put_uint32(data);
       break;
     case 8:
-      get_bytes(wireline_code, 19);
-      err = decode_wireline(wireline_code, &rolling, &fixed_v2, &data);
+      get_bytes(buf, 19);
+      err = decode_wireline(buf, &rolling, &fixed_v2, &data);
       put_err(err);
       put_uint32(rolling);
       put_uint64(fixed_v2);
