@@ -99,66 +99,58 @@ static int8_t _v2_check_parity(const uint64_t fixed, const uint32_t data) {
   return 0;
 }
 
-static void _encode_v2_rolling(const uint32_t rolling, uint32_t *rolling1,
-                               uint32_t *rolling2) {
+static void _encode_v2_rolling(const uint32_t rolling,
+                               uint32_t *rolling_halves) {
   uint32_t rolling_reversed = 0;
-  int8_t i;
+  int8_t i, half;
 
   for (i = 0; i < 28; i++) {
     rolling_reversed |= ((rolling >> i) & 1) << (28 - i - 1);
   }
 
-  *rolling1 = 0;
-  *rolling2 = 0;
+  rolling_halves[0] = 0;
+  rolling_halves[1] = 0;
 
-  for (i = 0; i < 8; i += 2) {
-    *rolling1 |= rolling_reversed % 3 << i;
-    rolling_reversed /= 3;
+  for (half = 0; half < 2; half++) {
+    for (i = 0; i < 8; i += 2) {
+      rolling_halves[half] |= rolling_reversed % 3 << i;
+      rolling_reversed /= 3;
+    }
   }
 
-  for (i = 0; i < 8; i += 2) {
-    *rolling2 |= rolling_reversed % 3 << i;
-    rolling_reversed /= 3;
+  for (half = 0; half < 2; half++) {
+    for (i = 10; i < 18; i += 2) {
+      rolling_halves[half] |= rolling_reversed % 3 << i;
+      rolling_reversed /= 3;
+    }
   }
 
-  for (i = 10; i < 18; i += 2) {
-    *rolling1 |= rolling_reversed % 3 << i;
-    rolling_reversed /= 3;
-  }
-
-  for (i = 10; i < 18; i += 2) {
-    *rolling2 |= rolling_reversed % 3 << i;
-    rolling_reversed /= 3;
-  }
-
-  *rolling1 |= (rolling_reversed % 3) << 8;
+  rolling_halves[0] |= (rolling_reversed % 3) << 8;
   rolling_reversed /= 3;
 
-  *rolling2 |= (rolling_reversed % 3) << 8;
+  rolling_halves[1] |= (rolling_reversed % 3) << 8;
 }
 
-static int8_t _decode_v2_rolling(const uint32_t rolling1,
-                                 const uint32_t rolling2, uint32_t *rolling) {
-  int8_t i;
+static int8_t _decode_v2_rolling(const uint32_t *rolling_halves,
+                                 uint32_t *rolling) {
+  int8_t i, half;
   uint32_t rolling_reversed;
 
-  rolling_reversed = (rolling2 >> 8) & 3;
-  rolling_reversed = (rolling_reversed * 3) + ((rolling1 >> 8) & 3);
+  rolling_reversed = (rolling_halves[1] >> 8) & 3;
+  rolling_reversed = (rolling_reversed * 3) + ((rolling_halves[0] >> 8) & 3);
 
-  for (i = 16; i >= 10; i -= 2) {
-    rolling_reversed = (rolling_reversed * 3) + ((rolling2 >> i) & 3);
+  for (half = 1; half >= 0; half--) {
+    for (i = 16; i >= 10; i -= 2) {
+      rolling_reversed =
+          (rolling_reversed * 3) + ((rolling_halves[half] >> i) & 3);
+    }
   }
 
-  for (i = 16; i >= 10; i -= 2) {
-    rolling_reversed = (rolling_reversed * 3) + ((rolling1 >> i) & 3);
-  }
-
-  for (i = 6; i >= 0; i -= 2) {
-    rolling_reversed = (rolling_reversed * 3) + ((rolling2 >> i) & 3);
-  }
-
-  for (i = 6; i >= 0; i -= 2) {
-    rolling_reversed = (rolling_reversed * 3) + ((rolling1 >> i) & 3);
+  for (half = 1; half >= 0; half--) {
+    for (i = 6; i >= 0; i -= 2) {
+      rolling_reversed =
+          (rolling_reversed * 3) + ((rolling_halves[half] >> i) & 3);
+    }
   }
 
   if (rolling_reversed >= 0x10000000) {
@@ -174,22 +166,21 @@ static int8_t _decode_v2_rolling(const uint32_t rolling1,
 }
 
 static int8_t _v2_combine_halves(const uint8_t frame_type,
-                                 const uint32_t rolling1,
-                                 const uint32_t rolling2, const uint32_t fixed1,
-                                 const uint32_t fixed2, const uint16_t data1,
-                                 const uint16_t data2, uint32_t *rolling,
+                                 const uint32_t *rolling_halves,
+                                 const uint32_t *fixed_halves,
+                                 const uint16_t *data_halves, uint32_t *rolling,
                                  uint64_t *fixed, uint32_t *data) {
   int8_t err = 0;
 
-  err = _decode_v2_rolling(rolling1, rolling2, rolling);
+  err = _decode_v2_rolling(rolling_halves, rolling);
   if (err < 0) {
     return err;
   }
 
-  *fixed = ((uint64_t)fixed1 << 20) | fixed2;
+  *fixed = ((uint64_t)fixed_halves[0] << 20) | fixed_halves[1];
 
   if (frame_type == 1) {
-    *data = ((uint32_t)data1 << 16) | data2;
+    *data = ((uint32_t)data_halves[0] << 16) | data_halves[1];
 
     err = _v2_check_parity(*fixed, *data);
     if (err < 0) {
@@ -344,7 +335,7 @@ int8_t encode_v2(const uint32_t rolling, const uint64_t fixed, uint32_t data,
                  const uint8_t frame_type, uint8_t *packet) {
   int8_t err = 0;
   int8_t i;
-  uint32_t rolling1, rolling2;
+  uint32_t rolling_halves[2];
   const int8_t packet_len = (frame_type == 0 ? 10 : 16);
 
   err = _v2_check_limits(rolling, fixed);
@@ -352,15 +343,16 @@ int8_t encode_v2(const uint32_t rolling, const uint64_t fixed, uint32_t data,
     return err;
   }
 
-  _encode_v2_rolling(rolling, &rolling1, &rolling2);
+  _encode_v2_rolling(rolling, rolling_halves);
   _v2_calc_parity(fixed, &data);
 
   for (i = 0; i < packet_len; i++) {
     packet[i] = 0x00;
   }
 
-  _encode_v2_half(rolling1, fixed >> 20, data >> 16, frame_type, &packet[0]);
-  _encode_v2_half(rolling2, fixed & 0xfffff, data & 0xffff, frame_type,
+  _encode_v2_half(rolling_halves[0], fixed >> 20, data >> 16, frame_type,
+                  &packet[0]);
+  _encode_v2_half(rolling_halves[1], fixed & 0xfffff, data & 0xffff, frame_type,
                   &packet[packet_len / 2]);
 
   return 0;
@@ -388,24 +380,25 @@ static int8_t _decode_v2_half(const uint8_t frame_type,
 int8_t decode_v2(uint8_t frame_type, const uint8_t *packet, uint32_t *rolling,
                  uint64_t *fixed, uint32_t *data) {
   int8_t err = 0;
-  uint32_t rolling1, rolling2;
-  uint32_t fixed1, fixed2;
-  uint16_t data1, data2;
+  uint32_t rolling_halves[2];
+  uint32_t fixed_halves[2];
+  uint16_t data_halves[2];
   const uint8_t packet_len = (frame_type == 0 ? 10 : 16);
 
-  err = _decode_v2_half(frame_type, &packet[0], &rolling1, &fixed1, &data1);
+  err = _decode_v2_half(frame_type, &packet[0], &rolling_halves[0],
+                        &fixed_halves[0], &data_halves[0]);
   if (err < 0) {
     return err;
   }
 
-  err = _decode_v2_half(frame_type, &packet[packet_len / 2], &rolling2, &fixed2,
-                        &data2);
+  err = _decode_v2_half(frame_type, &packet[packet_len / 2], &rolling_halves[1],
+                        &fixed_halves[1], &data_halves[1]);
   if (err < 0) {
     return err;
   }
 
-  err = _v2_combine_halves(frame_type, rolling1, rolling2, fixed1, fixed2,
-                           data1, data2, rolling, fixed, data);
+  err = _v2_combine_halves(frame_type, rolling_halves, fixed_halves,
+                           data_halves, rolling, fixed, data);
   if (err < 0) {
     return err;
   }
@@ -422,14 +415,14 @@ int8_t encode_wireline(const uint32_t rolling, const uint64_t fixed,
                        uint32_t data, uint8_t *packet) {
   int8_t err = 0;
   int8_t i;
-  uint32_t rolling1, rolling2;
+  uint32_t rolling_halves[2];
 
   err = _v2_check_limits(rolling, fixed);
   if (err < 0) {
     return err;
   }
 
-  _encode_v2_rolling(rolling, &rolling1, &rolling2);
+  _encode_v2_rolling(rolling, rolling_halves);
   _v2_calc_parity(fixed, &data);
 
   packet[0] = 0x55;
@@ -439,8 +432,9 @@ int8_t encode_wireline(const uint32_t rolling, const uint64_t fixed,
     packet[i] = 0x00;
   }
 
-  _encode_wireline_half(rolling1, fixed >> 20, data >> 16, &packet[3]);
-  _encode_wireline_half(rolling2, fixed & 0xfffff, data & 0xffff, &packet[11]);
+  _encode_wireline_half(rolling_halves[0], fixed >> 20, data >> 16, &packet[3]);
+  _encode_wireline_half(rolling_halves[1], fixed & 0xfffff, data & 0xffff,
+                        &packet[11]);
 
   return 0;
 }
@@ -466,25 +460,27 @@ static int8_t _decode_wireline_half(const uint8_t *packet_half,
 int8_t decode_wireline(const uint8_t *packet, uint32_t *rolling,
                        uint64_t *fixed, uint32_t *data) {
   int8_t err = 0;
-  uint32_t rolling1, rolling2;
-  uint32_t fixed1, fixed2;
-  uint16_t data1, data2;
+  uint32_t rolling_halves[2];
+  uint32_t fixed_halves[2];
+  uint16_t data_halves[2];
 
   if ((packet[0] != 0x55) || (packet[1] != 0x01) || (packet[2] != 0x00)) {
     return -1;
   }
 
-  err = _decode_wireline_half(&packet[3], &rolling1, &fixed1, &data1);
+  err = _decode_wireline_half(&packet[3], &rolling_halves[0], &fixed_halves[0],
+                              &data_halves[0]);
   if (err < 0) {
     return err;
   }
 
-  err = _decode_wireline_half(&packet[11], &rolling2, &fixed2, &data2);
+  err = _decode_wireline_half(&packet[11], &rolling_halves[1], &fixed_halves[1],
+                              &data_halves[1]);
   if (err < 0) {
     return err;
   }
 
-  err = _v2_combine_halves(1, rolling1, rolling2, fixed1, fixed2, data1, data2,
+  err = _v2_combine_halves(1, rolling_halves, fixed_halves, data_halves,
                            rolling, fixed, data);
   if (err < 0) {
     return err;
