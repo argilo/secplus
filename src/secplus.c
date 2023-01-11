@@ -306,7 +306,7 @@ static int8_t decode_v2_half_parts(const uint8_t frame_type,
   return 0;
 }
 
-int8_t v2_check_limits(const uint32_t rolling, const uint64_t fixed) {
+static int8_t v2_check_limits(const uint32_t rolling, const uint64_t fixed) {
   if ((rolling >> 28) != 0) {
     return -1;
   }
