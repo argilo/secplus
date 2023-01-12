@@ -9,10 +9,12 @@
 
 #include "secplus.h"
 
-int8_t encode_v1(const uint32_t rolling, uint32_t fixed, uint8_t *symbols) {
+int8_t encode_v1(const uint32_t rolling, uint32_t fixed, uint8_t *symbols1,
+                 uint8_t *symbols2) {
   uint32_t rolling_reversed = 0;
-  int8_t i;
+  int8_t i, half;
   uint8_t acc;
+  uint8_t *symbols;
 
   if (fixed >= 3486784401u) {
     return -1;
@@ -22,48 +24,50 @@ int8_t encode_v1(const uint32_t rolling, uint32_t fixed, uint8_t *symbols) {
     rolling_reversed |= ((rolling >> i) & 1) << (32 - i - 1);
   }
 
-  for (i = 38; i >= 0; i -= 2) {
-    symbols[i] = rolling_reversed % 3;
-    rolling_reversed /= 3;
-    symbols[i + 1] = fixed % 3;
-    fixed /= 3;
-  }
+  for (half = 1; half >= 0; half--) {
+    symbols = (half == 0 ? symbols1 : symbols2);
 
-  acc = 0;
-  for (i = 0; i < 40; i += 2) {
-    if (i == 20) {
-      acc = 0;
+    for (i = 18; i >= 0; i -= 2) {
+      symbols[i] = rolling_reversed % 3;
+      rolling_reversed /= 3;
+      symbols[i + 1] = fixed % 3;
+      fixed /= 3;
     }
 
-    acc += symbols[i];
-    acc += symbols[i + 1];
-    symbols[i + 1] = acc % 3;
+    acc = 0;
+    for (i = 0; i < 20; i += 2) {
+      acc += symbols[i];
+      acc += symbols[i + 1];
+      symbols[i + 1] = acc % 3;
+    }
   }
 
   return 0;
 }
 
-int8_t decode_v1(const uint8_t *symbols, uint32_t *rolling, uint32_t *fixed) {
+int8_t decode_v1(const uint8_t *symbols1, const uint8_t *symbols2,
+                 uint32_t *rolling, uint32_t *fixed) {
   uint32_t rolling_reversed = 0;
-  uint8_t acc = 0;
-  uint8_t digit = 0;
-  int8_t i;
+  uint8_t acc;
+  uint8_t digit;
+  int8_t i, half;
+  const uint8_t *symbols;
 
   *rolling = 0;
   *fixed = 0;
 
-  for (i = 0; i < 40; i += 2) {
-    if (i == 20) {
-      acc = 0;
+  for (half = 0; half < 2; half++) {
+    symbols = (half == 0 ? symbols1 : symbols2);
+    acc = 0;
+    for (i = 0; i < 20; i += 2) {
+      digit = symbols[i];
+      rolling_reversed = (rolling_reversed * 3) + digit;
+      acc += digit;
+
+      digit = (60 + symbols[i + 1] - acc) % 3;
+      *fixed = (*fixed * 3) + digit;
+      acc += digit;
     }
-
-    digit = symbols[i];
-    rolling_reversed = (rolling_reversed * 3) + digit;
-    acc += digit;
-
-    digit = (60 + symbols[i + 1] - acc) % 3;
-    *fixed = (*fixed * 3) + digit;
-    acc += digit;
   }
 
   for (i = 0; i < 32; i++) {
@@ -332,11 +336,11 @@ static void encode_v2_half(const uint32_t rolling, const uint32_t fixed,
 }
 
 int8_t encode_v2(const uint32_t rolling, const uint64_t fixed, uint32_t data,
-                 const uint8_t frame_type, uint8_t *packet) {
+                 const uint8_t frame_type, uint8_t *packet1, uint8_t *packet2) {
   int8_t err = 0;
   int8_t i;
   uint32_t rolling_halves[2];
-  const int8_t packet_len = (frame_type == 0 ? 10 : 16);
+  const int8_t packet_len = (frame_type == 0 ? 5 : 8);
 
   err = v2_check_limits(rolling, fixed);
   if (err < 0) {
@@ -347,13 +351,14 @@ int8_t encode_v2(const uint32_t rolling, const uint64_t fixed, uint32_t data,
   v2_calc_parity(fixed, &data);
 
   for (i = 0; i < packet_len; i++) {
-    packet[i] = 0x00;
+    packet1[i] = 0x00;
+    packet2[i] = 0x00;
   }
 
   encode_v2_half(rolling_halves[0], fixed >> 20, data >> 16, frame_type,
-                 &packet[0]);
+                 packet1);
   encode_v2_half(rolling_halves[1], fixed & 0xfffff, data & 0xffff, frame_type,
-                 &packet[packet_len / 2]);
+                 packet2);
 
   return 0;
 }
@@ -377,21 +382,21 @@ static int8_t decode_v2_half(const uint8_t frame_type,
   return 0;
 }
 
-int8_t decode_v2(uint8_t frame_type, const uint8_t *packet, uint32_t *rolling,
-                 uint64_t *fixed, uint32_t *data) {
+int8_t decode_v2(uint8_t frame_type, const uint8_t *packet1,
+                 const uint8_t *packet2, uint32_t *rolling, uint64_t *fixed,
+                 uint32_t *data) {
   int8_t err = 0;
   uint32_t rolling_halves[2];
   uint32_t fixed_halves[2];
   uint16_t data_halves[2];
-  const uint8_t packet_len = (frame_type == 0 ? 10 : 16);
 
-  err = decode_v2_half(frame_type, &packet[0], &rolling_halves[0],
+  err = decode_v2_half(frame_type, packet1, &rolling_halves[0],
                        &fixed_halves[0], &data_halves[0]);
   if (err < 0) {
     return err;
   }
 
-  err = decode_v2_half(frame_type, &packet[packet_len / 2], &rolling_halves[1],
+  err = decode_v2_half(frame_type, packet2, &rolling_halves[1],
                        &fixed_halves[1], &data_halves[1]);
   if (err < 0) {
     return err;

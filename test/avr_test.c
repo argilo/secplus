@@ -66,7 +66,7 @@ int main() {
     case 1:
       get_uint32(&rolling);
       get_uint32(&fixed_v1);
-      err = encode_v1(rolling, fixed_v1, buf);
+      err = encode_v1(rolling, fixed_v1, &buf[0], &buf[20]);
       put_err(err);
       put_bytes(buf, 40);
       break;
@@ -74,7 +74,7 @@ int main() {
       get_uint32(&rolling);
       get_uint64(&fixed_v2);
       get_uint32(&data);
-      err = encode_v2(rolling, fixed_v2, data, 0, buf);
+      err = encode_v2(rolling, fixed_v2, data, 0, &buf[0], &buf[5]);
       put_err(err);
       put_bytes(buf, 10);
       break;
@@ -82,7 +82,7 @@ int main() {
       get_uint32(&rolling);
       get_uint64(&fixed_v2);
       get_uint32(&data);
-      err = encode_v2(rolling, fixed_v2, data, 1, buf);
+      err = encode_v2(rolling, fixed_v2, data, 1, &buf[0], &buf[8]);
       put_err(err);
       put_bytes(buf, 16);
       break;
@@ -96,14 +96,14 @@ int main() {
       break;
     case 5:
       get_bytes(buf, 40);
-      err = decode_v1(buf, &rolling, &fixed_v1);
+      err = decode_v1(&buf[0], &buf[20], &rolling, &fixed_v1);
       put_err(err);
       put_uint32(rolling);
       put_uint32(fixed_v1);
       break;
     case 6:
       get_bytes(buf, 10);
-      err = decode_v2(0, buf, &rolling, &fixed_v2, &data);
+      err = decode_v2(0, &buf[0], &buf[5], &rolling, &fixed_v2, &data);
       put_err(err);
       put_uint32(rolling);
       put_uint64(fixed_v2);
@@ -111,7 +111,7 @@ int main() {
       break;
     case 7:
       get_bytes(buf, 16);
-      err = decode_v2(1, buf, &rolling, &fixed_v2, &data);
+      err = decode_v2(1, &buf[0], &buf[8], &rolling, &fixed_v2, &data);
       put_err(err);
       put_uint32(rolling);
       put_uint64(fixed_v2);

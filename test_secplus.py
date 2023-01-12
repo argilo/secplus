@@ -548,19 +548,21 @@ def substitute_c():
     def encode(rolling, fixed):
         if rolling >= 2**32:
             raise ValueError("Rolling code must be less than 2^32")
-        symbols = create_string_buffer(os.urandom(40), 40)
-        err = libsecplus.encode_v1(c_uint32(rolling), c_uint32(fixed), symbols)
+        symbols1 = create_string_buffer(os.urandom(20), 20)
+        symbols2 = create_string_buffer(os.urandom(20), 20)
+        err = libsecplus.encode_v1(c_uint32(rolling), c_uint32(fixed), symbols1, symbols2)
         if err < 0:
             raise ValueError("Invalid input")
-        return list(symbols.raw)
+        return list(symbols1.raw + symbols2.raw)
 
     secplus.encode = encode
 
     def decode(code):
-        symbols = create_string_buffer(bytes(code), 40)
+        symbols1 = create_string_buffer(bytes(code[:20]), 20)
+        symbols2 = create_string_buffer(bytes(code[20:]), 20)
         rolling = c_uint32()
         fixed = c_uint32()
-        err = libsecplus.decode_v1(symbols, byref(rolling), byref(fixed))
+        err = libsecplus.decode_v1(symbols1, symbols2, byref(rolling), byref(fixed))
         if err < 0:
             raise ValueError("Invalid input")
         return rolling.value, fixed.value
@@ -569,23 +571,24 @@ def substitute_c():
 
     def encode_v2(rolling, fixed, data=None):
         if data is None:
-            packet_len = 10
+            packet_len = 5
             frame_type = 0
             data_c = 0
         else:
             if data >= 2**32:
                 raise ValueError("Data must be less than 2^32")
 
-            packet_len = 16
+            packet_len = 8
             frame_type = 1
             data_c = data
-        packet = create_string_buffer(os.urandom(packet_len), packet_len)
-        err = libsecplus.encode_v2(c_uint32(rolling), c_uint64(fixed), c_uint32(data_c), c_uint8(frame_type), packet)
+        packet1 = create_string_buffer(os.urandom(packet_len), packet_len)
+        packet2 = create_string_buffer(os.urandom(packet_len), packet_len)
+        err = libsecplus.encode_v2(c_uint32(rolling), c_uint64(fixed), c_uint32(data_c), c_uint8(frame_type), packet1, packet2)
         if err < 0:
             raise ValueError("Invalid input")
 
         code = []
-        for byte in packet.raw:
+        for byte in packet1.raw + packet2.raw:
             for bit in range(8):
                 code.append((byte >> (7 - bit)) & 1)
         return code
@@ -602,12 +605,14 @@ def substitute_c():
                 byte |= code[offset + bit] << (7 - bit)
             code_bytes.append(byte)
         packet = bytes(code_bytes)
+        packet1 = packet[:len(packet) // 2]
+        packet2 = packet[len(packet) // 2:]
 
         rolling = c_uint32()
         fixed = c_uint64()
         data = c_uint32()
 
-        err = libsecplus.decode_v2(c_uint8(frame_type), packet, byref(rolling), byref(fixed), byref(data))
+        err = libsecplus.decode_v2(c_uint8(frame_type), packet1, packet2, byref(rolling), byref(fixed), byref(data))
         if err < 0:
             raise ValueError("Invalid input")
         return rolling.value, fixed.value, None if len(code) == 80 else data.value
