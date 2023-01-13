@@ -436,13 +436,14 @@ def _manchester(code):
     return output
 
 
-def encode_v2_manchester(rolling, fixed, data=None):
+def encode_v2_manchester(rolling, fixed, data=None, fast=True):
     """Encode a Security+ 2.0 payload and produce a Manchester stream for transmission
 
     Arguments:
     rolling -- the rolling code (28 bits)
     fixed -- the fixed code (40 bits)
     data -- the data (32 bits, optional)
+    fast -- when True, shortens the time between packets
     """
 
     preamble = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1]
@@ -450,7 +451,7 @@ def encode_v2_manchester(rolling, fixed, data=None):
     half_len = len(code) // 2
     packet1 = preamble + [0, 0] + code[:half_len]
     packet2 = preamble + [0, 1] + code[half_len:]
-    blank = [0] * 33
+    blank = [0] * (33 if fast else 400 - 2 * len(packet1))
 
     return _manchester(packet1) + blank + _manchester(packet2) + blank
 
