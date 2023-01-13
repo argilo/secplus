@@ -283,56 +283,30 @@ class TestSecplus(unittest.TestCase):
             self.assertEqual(code, code_out)
 
     def test_encode_v2_manchester_fast(self):
-        rolling, fixed = self.v2_rolling_list[0], self.v2_fixed_list[0]
-        manchester_out = secplus.encode_v2_manchester(rolling, fixed)
-        manchester = "10101010101010101010101010101010010101011010" \
-            + "10101001101010011010101001100101010101101010010101010101100101100101011001010110" \
-            + "000000000000000000000000000000000" \
-            + "10101010101010101010101010101010010101011001" \
-            + "10100110100110010110101001010110100101010110100110100101100101100101100101100101" \
-            + "000000000000000000000000000000000"
-        manchester = [int(bit) for bit in manchester]
-        self.assertEqual(manchester, manchester_out)
-
-    def test_encode_v2_manchester_fast_with_data(self):
-        rolling, fixed, data = self.v2_rolling_list[16], self.v2_fixed_list[16], self.v2_data_list[16]
-        manchester_out = secplus.encode_v2_manchester(rolling, fixed, data)
-        manchester = "10101010101010101010101010101010010101011010" \
-            + "10011010100110101010011001011001011010101001011001100110101001010101100110010101" \
-            + "011010011010011010101010011010010110011001011001" \
-            + "000000000000000000000000000000000" \
-            + "10101010101010101010101010101010010101011001" \
-            + "10011010011010101001010110100110100110010110100101100110100101010110100110100101" \
-            + "010110010110100101010110100110100110100110100101" \
-            + "000000000000000000000000000000000"
-        manchester = [int(bit) for bit in manchester]
-        self.assertEqual(manchester, manchester_out)
+        for code, rolling, fixed, data in zip(self.v2_codes, self.v2_rolling_list,
+                                              self.v2_fixed_list, self.v2_data_list):
+            manchester_out = secplus.encode_v2_manchester(rolling, fixed, data)
+            manchester = "10101010101010101010101010101010010101011010" \
+                + "".join("10" if bit == "0" else "01" for bit in code[:len(code) // 2]) \
+                + "000000000000000000000000000000000" \
+                + "10101010101010101010101010101010010101011001" \
+                + "".join("10" if bit == "0" else "01" for bit in code[len(code) // 2:]) \
+                + "000000000000000000000000000000000"
+            manchester = [int(bit) for bit in manchester]
+            self.assertEqual(manchester, manchester_out)
 
     def test_encode_v2_manchester_slow(self):
-        rolling, fixed = self.v2_rolling_list[0], self.v2_fixed_list[0]
-        manchester_out = secplus.encode_v2_manchester(rolling, fixed, fast=False)
-        manchester = "10101010101010101010101010101010010101011010" \
-            + "10101001101010011010101001100101010101101010010101010101100101100101011001010110" \
-            + ("0" * 276) \
-            + "10101010101010101010101010101010010101011001" \
-            + "10100110100110010110101001010110100101010110100110100101100101100101100101100101" \
-            + ("0" * 276)
-        manchester = [int(bit) for bit in manchester]
-        self.assertEqual(manchester, manchester_out)
-
-    def test_encode_v2_manchester_slow_with_data(self):
-        rolling, fixed, data = self.v2_rolling_list[16], self.v2_fixed_list[16], self.v2_data_list[16]
-        manchester_out = secplus.encode_v2_manchester(rolling, fixed, data, fast=False)
-        manchester = "10101010101010101010101010101010010101011010" \
-            + "10011010100110101010011001011001011010101001011001100110101001010101100110010101" \
-            + "011010011010011010101010011010010110011001011001" \
-            + ("0" * 228) \
-            + "10101010101010101010101010101010010101011001" \
-            + "10011010011010101001010110100110100110010110100101100110100101010110100110100101" \
-            + "010110010110100101010110100110100110100110100101" \
-            + ("0" * 228)
-        manchester = [int(bit) for bit in manchester]
-        self.assertEqual(manchester, manchester_out)
+        for code, rolling, fixed, data in zip(self.v2_codes, self.v2_rolling_list,
+                                              self.v2_fixed_list, self.v2_data_list):
+            manchester_out = secplus.encode_v2_manchester(rolling, fixed, data, fast=False)
+            manchester = "10101010101010101010101010101010010101011010" \
+                + "".join("10" if bit == "0" else "01" for bit in code[:len(code) // 2]) \
+                + ("0" * (400 - len(code) - 44)) \
+                + "10101010101010101010101010101010010101011001" \
+                + "".join("10" if bit == "0" else "01" for bit in code[len(code) // 2:]) \
+                + ("0" * (400 - len(code) - 44))
+            manchester = [int(bit) for bit in manchester]
+            self.assertEqual(manchester, manchester_out)
 
     def test_decode_v2(self):
         for code, rolling, fixed, data in zip(self.v2_codes, self.v2_rolling_list,
