@@ -168,26 +168,28 @@ class TestSecplus(unittest.TestCase):
             self.assertEqual(code, code_out)
 
     def test_encode_ook_fast(self):
-        rolling, fixed = self.v1_rolling_list[0], self.v1_fixed_list[0]
-        ook_out = secplus.encode_ook(rolling, fixed)
-        ook = "000100010001001100010001000100010111001100110011011101110011000101110111011101110011" \
-            + "0000000000000000000000000000000000000000" \
-            + "011100010011001100110111011100110011000100110111001100010011000100010011001100110001" \
-            + "0000000000000000000000000000000000000000"
-        ook = [int(bit) for bit in ook]
-        self.assertEqual(ook, ook_out)
+        for code, rolling, fixed in zip(self.v1_codes, self.v1_rolling_list, self.v1_fixed_list):
+            ook_out = secplus.encode_ook(rolling, fixed)
+            ook = "0001" \
+                + "".join("0" * (3-int(bit)) + "1" * (1+int(bit)) for bit in code[:20]) \
+                + "0000000000000000000000000000000000000000" \
+                + "0111" \
+                + "".join("0" * (3-int(bit)) + "1" * (1+int(bit)) for bit in code[20:]) \
+                + "0000000000000000000000000000000000000000"
+            ook = [int(bit) for bit in ook]
+            self.assertEqual(ook, ook_out)
 
     def test_encode_ook_slow(self):
-        rolling, fixed = self.v1_rolling_list[0], self.v1_fixed_list[0]
-        ook_out = secplus.encode_ook(rolling, fixed, fast=False)
-        ook = "000100010001001100010001000100010111001100110011011101110011000101110111011101110011" \
-            + "000000000000000000000000000000000000000000000000000000000000" \
-            + "00000000000000000000000000000000000000000000000000000000" \
-            + "011100010011001100110111011100110011000100110111001100010011000100010011001100110001" \
-            + "000000000000000000000000000000000000000000000000000000000000" \
-            + "00000000000000000000000000000000000000000000000000000000"
-        ook = [int(bit) for bit in ook]
-        self.assertEqual(ook, ook_out)
+        for code, rolling, fixed in zip(self.v1_codes, self.v1_rolling_list, self.v1_fixed_list):
+            ook_out = secplus.encode_ook(rolling, fixed, fast=False)
+            ook = "0001" \
+                + "".join("0" * (3-int(bit)) + "1" * (1+int(bit)) for bit in code[:20]) \
+                + ("0" * 116) \
+                + "0111" \
+                + "".join("0" * (3-int(bit)) + "1" * (1+int(bit)) for bit in code[20:]) \
+                + ("0" * 116)
+            ook = [int(bit) for bit in ook]
+            self.assertEqual(ook, ook_out)
 
     def test_decode(self):
         for code, rolling, fixed in zip(self.v1_codes, self.v1_rolling_list, self.v1_fixed_list):
