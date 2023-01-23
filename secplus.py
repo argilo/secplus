@@ -1,5 +1,5 @@
 #
-# Copyright 2016,2020-2022 Clayton Smith (argilo@gmail.com)
+# Copyright 2016,2020-2023 Clayton Smith (argilo@gmail.com)
 #
 # This file is part of secplus.
 #
