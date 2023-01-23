@@ -1,5 +1,6 @@
 .coverage
 *.pyc
 *.o
+*.dylib
 *.so
 *.elf

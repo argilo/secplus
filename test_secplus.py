@@ -19,6 +19,7 @@
 #
 
 import os
+import platform
 import random
 import unittest
 import secplus
@@ -553,7 +554,12 @@ class TestSecplus(unittest.TestCase):
 
 
 def substitute_c():
-    libsecplus = cdll.LoadLibrary("./libsecplus.so")
+    if platform.system() == "Linux":
+        libsecplus = cdll.LoadLibrary("./libsecplus.so")
+    elif platform.system() == "Darwin":
+        libsecplus = cdll.LoadLibrary("./libsecplus.dylib")
+    else:
+        raise Exception("Platform not supported")
     libsecplus.encode_v1.restype = c_int8
     libsecplus.decode_v1.restype = c_int8
     libsecplus.encode_v2.restype = c_int8
