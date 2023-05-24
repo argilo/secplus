@@ -411,6 +411,9 @@ _OOK = {
 def encode_ook(rolling, fixed, fast=True):
     """Encode a Security+ payload and produce an OOK stream for transmission
 
+    The resulting pulses should be transmitted at a baud rate of 2000. That is,
+    each 0 (off) or 1 (on) should be 0.5 ms long.
+
     Arguments:
     rolling -- the rolling code
     fixed -- the fixed code
@@ -438,6 +441,9 @@ def _manchester(code):
 
 def encode_v2_manchester(rolling, fixed, data=None, fast=True):
     """Encode a Security+ 2.0 payload and produce a Manchester stream for transmission
+
+    The resulting pulses should be transmitted at a baud rate of 4000. That is,
+    each 0 (off) or 1 (on) should be 0.25 ms long.
 
     Arguments:
     rolling -- the rolling code (28 bits)
