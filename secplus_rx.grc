@@ -743,16 +743,15 @@ blocks:
       \                self.process_buffer(current_sample)\n                self.buffer\
       \ = []\n            self.last_sample = sample\n        return len(input_items[0])\n\
       \n    def process_edge(self, rising, samples):\n        if samples < 0.125e-3\
-      \ * self.samp_rate:\n            self.buffer = []\n        elif samples < 0.375e-3\
-      \ * self.samp_rate:\n            self.buffer.append(0 if rising else 1)\n  \
-      \      elif samples < 0.625e-3 * self.samp_rate:\n            self.buffer.append(0\
-      \ if rising else 1)\n            self.buffer.append(0 if rising else 1)\n  \
-      \      else:\n            self.buffer = []\n\n    def process_buffer(self, current_sample):\n\
-      \        manchester = \"\".join(str(b) for b in self.buffer)\n        start\
-      \ = manchester.find(\"1010101001010101\")\n        if start == -1:\n       \
-      \     return\n\n        if manchester[start+20:start+24] == \"1010\":\n    \
-      \        packet_length = 40\n        elif manchester[start+20:start+24] == \"\
-      1001\":\n            packet_length = 64\n        else:\n            return\n\
+      \ * self.samp_rate:\n            pass\n        elif samples < 0.375e-3 * self.samp_rate:\n\
+      \            self.buffer.append(0 if rising else 1)\n        elif samples <\
+      \ 0.625e-3 * self.samp_rate:\n            self.buffer.append(0 if rising else\
+      \ 1)\n            self.buffer.append(0 if rising else 1)\n\n    def process_buffer(self,\
+      \ current_sample):\n        manchester = \"\".join(str(b) for b in self.buffer)\n\
+      \        start = manchester.find(\"1010101001010101\")\n        if start ==\
+      \ -1:\n            return\n\n        if manchester[start+20:start+24] == \"\
+      1010\":\n            packet_length = 40\n        elif manchester[start+20:start+24]\
+      \ == \"1001\":\n            packet_length = 64\n        else:\n            return\n\
       \n        manchester = manchester[start+16:start+20+(packet_length*2)]\n   \
       \     baseband = []\n        for i in range(0, len(manchester), 2):\n      \
       \      if manchester[i:i+2] == \"01\":\n                baseband.append(1)\n\

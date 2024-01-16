@@ -62,14 +62,12 @@ class blk(gr.sync_block):
 
     def process_edge(self, rising, samples):
         if samples < 0.125e-3 * self.samp_rate:
-            self.buffer = []
+            pass
         elif samples < 0.375e-3 * self.samp_rate:
             self.buffer.append(0 if rising else 1)
         elif samples < 0.625e-3 * self.samp_rate:
             self.buffer.append(0 if rising else 1)
             self.buffer.append(0 if rising else 1)
-        else:
-            self.buffer = []
 
     def process_buffer(self, current_sample):
         manchester = "".join(str(b) for b in self.buffer)
