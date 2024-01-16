@@ -749,19 +749,19 @@ blocks:
       \ if rising else 1)\n            self.buffer.append(0 if rising else 1)\n  \
       \      else:\n            self.buffer = []\n\n    def process_buffer(self, current_sample):\n\
       \        manchester = \"\".join(str(b) for b in self.buffer)\n        start\
-      \ = manchester.find(\"1010101010101010101010101010101001010101\")\n        if\
-      \ start == -1:\n            return\n\n        if manchester[start+44:start+48]\
-      \ == \"1010\":\n            packet_length = 40\n        elif manchester[start+44:start+48]\
-      \ == \"1001\":\n            packet_length = 64\n        else:\n            return\n\
-      \n        manchester = manchester[start:start+44+(packet_length*2)]\n      \
-      \  baseband = []\n        for i in range(0, len(manchester), 2):\n         \
-      \   if manchester[i:i+2] == \"01\":\n                baseband.append(1)\n  \
-      \          elif manchester[i:i+2] == \"10\":\n                baseband.append(0)\n\
-      \            else:\n                return\n        packet = baseband[22:]\n\
-      \n        if baseband[20:22] == [0, 0]:\n            frame_id = 0\n        elif\
-      \ baseband[20:22] == [0, 1]:\n            frame_id = 1\n        else:\n    \
-      \        return\n\n        self.pair_time[frame_id] = current_sample\n\n   \
-      \     if self.pair[frame_id] == packet:\n            return\n\n        self.pair[frame_id]\
+      \ = manchester.find(\"1010101001010101\")\n        if start == -1:\n       \
+      \     return\n\n        if manchester[start+20:start+24] == \"1010\":\n    \
+      \        packet_length = 40\n        elif manchester[start+20:start+24] == \"\
+      1001\":\n            packet_length = 64\n        else:\n            return\n\
+      \n        manchester = manchester[start+16:start+20+(packet_length*2)]\n   \
+      \     baseband = []\n        for i in range(0, len(manchester), 2):\n      \
+      \      if manchester[i:i+2] == \"01\":\n                baseband.append(1)\n\
+      \            elif manchester[i:i+2] == \"10\":\n                baseband.append(0)\n\
+      \            else:\n                return\n        packet = baseband[2:]\n\n\
+      \        if baseband[0:2] == [0, 0]:\n            frame_id = 0\n        elif\
+      \ baseband[0:2] == [0, 1]:\n            frame_id = 1\n        else:\n      \
+      \      return\n\n        self.pair_time[frame_id] = current_sample\n\n     \
+      \   if self.pair[frame_id] == packet:\n            return\n\n        self.pair[frame_id]\
       \ = packet\n        \n        if (self.pair[frame_id ^ 1] is not None) and (len(self.pair[frame_id\
       \ ^ 1]) == packet_length):\n            if self.pair_time[frame_id] - self.pair_time[frame_id\
       \ ^ 1] < 0.35 * self.samp_rate:\n                try:\n                    rolling,\
@@ -797,4 +797,4 @@ connections:
 
 metadata:
   file_format: 1
-  grc_version: 3.10.5.0
+  grc_version: 3.10.9.2

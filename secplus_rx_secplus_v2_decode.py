@@ -73,18 +73,18 @@ class blk(gr.sync_block):
 
     def process_buffer(self, current_sample):
         manchester = "".join(str(b) for b in self.buffer)
-        start = manchester.find("1010101010101010101010101010101001010101")
+        start = manchester.find("1010101001010101")
         if start == -1:
             return
 
-        if manchester[start+44:start+48] == "1010":
+        if manchester[start+20:start+24] == "1010":
             packet_length = 40
-        elif manchester[start+44:start+48] == "1001":
+        elif manchester[start+20:start+24] == "1001":
             packet_length = 64
         else:
             return
 
-        manchester = manchester[start:start+44+(packet_length*2)]
+        manchester = manchester[start+16:start+20+(packet_length*2)]
         baseband = []
         for i in range(0, len(manchester), 2):
             if manchester[i:i+2] == "01":
@@ -93,11 +93,11 @@ class blk(gr.sync_block):
                 baseband.append(0)
             else:
                 return
-        packet = baseband[22:]
+        packet = baseband[2:]
 
-        if baseband[20:22] == [0, 0]:
+        if baseband[0:2] == [0, 0]:
             frame_id = 0
-        elif baseband[20:22] == [0, 1]:
+        elif baseband[0:2] == [0, 1]:
             frame_id = 1
         else:
             return

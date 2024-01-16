@@ -6,31 +6,19 @@
 #
 # GNU Radio Python Flow Graph
 # Title: Secplus Rx
-# GNU Radio version: 3.10.5.0
-
-from packaging.version import Version as StrictVersion
-
-if __name__ == '__main__':
-    import ctypes
-    import sys
-    if sys.platform.startswith('linux'):
-        try:
-            x11 = ctypes.cdll.LoadLibrary('libX11.so')
-            x11.XInitThreads()
-        except:
-            print("Warning: failed to XInitThreads()")
+# GNU Radio version: 3.10.9.2
 
 from PyQt5 import Qt
-from PyQt5.QtCore import QObject, pyqtSlot
 from gnuradio import qtgui
-from gnuradio.filter import firdes
-import sip
+from PyQt5.QtCore import QObject, pyqtSlot
 from gnuradio import blocks
 from gnuradio import filter
+from gnuradio.filter import firdes
 from gnuradio import gr
 from gnuradio.fft import window
 import sys
 import signal
+from PyQt5 import Qt
 from argparse import ArgumentParser
 from gnuradio.eng_arg import eng_float, intx
 from gnuradio import eng_notation
@@ -39,10 +27,9 @@ import osmosdr
 import time
 import secplus_rx_secplus_decode as secplus_decode  # embedded python block
 import secplus_rx_secplus_v2_decode as secplus_v2_decode  # embedded python block
+import sip
 
 
-
-from gnuradio import qtgui
 
 class secplus_rx(gr.top_block, Qt.QWidget):
 
@@ -53,8 +40,8 @@ class secplus_rx(gr.top_block, Qt.QWidget):
         qtgui.util.check_set_qss()
         try:
             self.setWindowIcon(Qt.QIcon.fromTheme('gnuradio-grc'))
-        except:
-            pass
+        except BaseException as exc:
+            print(f"Qt GUI: Could not set Icon: {str(exc)}", file=sys.stderr)
         self.top_scroll_layout = Qt.QVBoxLayout()
         self.setLayout(self.top_scroll_layout)
         self.top_scroll = Qt.QScrollArea()
@@ -70,12 +57,11 @@ class secplus_rx(gr.top_block, Qt.QWidget):
         self.settings = Qt.QSettings("GNU Radio", "secplus_rx")
 
         try:
-            if StrictVersion(Qt.qVersion()) < StrictVersion("5.0.0"):
-                self.restoreGeometry(self.settings.value("geometry").toByteArray())
-            else:
-                self.restoreGeometry(self.settings.value("geometry"))
-        except:
-            pass
+            geometry = self.settings.value("geometry")
+            if geometry:
+                self.restoreGeometry(geometry)
+        except BaseException as exc:
+            print(f"Qt GUI: Could not restore geometry: {str(exc)}", file=sys.stderr)
 
         ##################################################
         # Variables
@@ -89,6 +75,7 @@ class secplus_rx(gr.top_block, Qt.QWidget):
         ##################################################
         # Blocks
         ##################################################
+
         # Create the options list
         self._freq_options = [310150000, 315150000, 390150000]
         # Create the labels list
@@ -265,9 +252,6 @@ class secplus_rx(gr.top_block, Qt.QWidget):
 
 def main(top_block_cls=secplus_rx, options=None):
 
-    if StrictVersion("4.5.0") <= StrictVersion(Qt.qVersion()) < StrictVersion("5.0.0"):
-        style = gr.prefs().get_string('qtgui', 'style', 'raster')
-        Qt.QApplication.setGraphicsSystem(style)
     qapp = Qt.QApplication(sys.argv)
 
     tb = top_block_cls()
