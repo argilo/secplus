@@ -6,7 +6,7 @@
 #
 # GNU Radio Python Flow Graph
 # Title: Secplus V2 Tx
-# GNU Radio version: 3.10.5.0
+# GNU Radio version: 3.10.9.2
 
 from gnuradio import analog
 from gnuradio import blocks
@@ -21,7 +21,7 @@ from gnuradio.eng_arg import eng_float, intx
 from gnuradio import eng_notation
 import osmosdr
 import time
-import secplus
+import secplus_v2_tx_secplus as secplus  # embedded python module
 
 
 
@@ -48,6 +48,7 @@ class secplus_v2_tx(gr.top_block):
         ##################################################
         # Blocks
         ##################################################
+
         self.single_pole_iir_filter_xx_0 = filter.single_pole_iir_filter_cc(0.2, 1)
         self.osmosdr_sink_0 = osmosdr.sink(
             args="numchan=" + str(1) + " " + ''

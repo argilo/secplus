@@ -19,7 +19,10 @@
 
 import numpy as np
 from gnuradio import gr
-import secplus
+try:
+    import secplus
+except:
+    pass
 
 
 class blk(gr.sync_block):

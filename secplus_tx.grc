@@ -70,6 +70,7 @@ blocks:
     offset: '0'
     phase: '0'
     samp_rate: samp_rate
+    showports: 'False'
     type: complex
     waveform: analog.GR_COS_WAVE
   states:
@@ -169,19 +170,6 @@ blocks:
     coordinate: [328, 12.0]
     rotation: 0
     state: true
-- name: import_0
-  id: import
-  parameters:
-    alias: ''
-    comment: ''
-    imports: import secplus
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [8, 100.0]
-    rotation: 0
-    state: enabled
 - name: osmosdr_sink_0
   id: osmosdr_sink
   parameters:
@@ -460,6 +448,257 @@ blocks:
     coordinate: [448, 12.0]
     rotation: 0
     state: true
+- name: secplus
+  id: epy_module
+  parameters:
+    alias: ''
+    comment: ''
+    source_code: "#\n# Copyright 2016,2020-2023 Clayton Smith (argilo@gmail.com)\n\
+      #\n# This file is part of secplus.\n#\n# secplus is free software: you can redistribute\
+      \ it and/or modify\n# it under the terms of the GNU General Public License as\
+      \ published by\n# the Free Software Foundation, either version 3 of the License,\
+      \ or\n# (at your option) any later version.\n#\n# secplus is distributed in\
+      \ the hope that it will be useful,\n# but WITHOUT ANY WARRANTY; without even\
+      \ the implied warranty of\n# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\
+      \  See the\n# GNU General Public License for more details.\n#\n# You should\
+      \ have received a copy of the GNU General Public License\n# along with secplus.\
+      \  If not, see <http://www.gnu.org/licenses/>.\n#\n\n\"\"\"This module encodes\
+      \ and decodes Security+ and Security+ 2.0 rolling and fixed\ncodes, provides\
+      \ utility functions to prepare on-off keying sequences for\ntransmission, and\
+      \ pretty-prints the codes. It can be used to build stand-alone\napplications.\n\
+      \"\"\"\n\n\ndef encode(rolling, fixed):\n    \"\"\"Encode a Security+ payload\
+      \ into 40 payload symbols\n\n    Arguments:\n    rolling -- the rolling code\n\
+      \    fixed -- the fixed code\n\n    Raises a ValueError if the rolling or fixed\
+      \ code is too large.\n    \"\"\"\n\n    if rolling >= 2**32:\n        raise\
+      \ ValueError(\"Rolling code must be less than 2^32\")\n    if fixed >= 3**20:\n\
+      \        raise ValueError(\"Fixed code must be less than 3^20\")\n\n    rolling\
+      \ = int(f\"{rolling & 0xfffffffe:032b}\"[::-1], 2)\n    rolling_base3 = [0]\
+      \ * 20\n    fixed_base3 = [0] * 20\n    for i in range(19, -1, -1):\n      \
+      \  rolling_base3[i] = rolling % 3\n        rolling //= 3\n        fixed_base3[i]\
+      \ = fixed % 3\n        fixed //= 3\n    code = []\n    for i in range(20):\n\
+      \        if i in [0, 10]:\n            acc = 0\n        acc += rolling_base3[i]\n\
+      \        code.append(rolling_base3[i])\n        acc += fixed_base3[i]\n    \
+      \    code.append(acc % 3)\n    return code\n\n\ndef decode(code):\n    \"\"\"\
+      Decode a Security+ transmission and return the rolling and fixed codes.\n\n\
+      \    Arguments:\n    code -- a list containing the 40 payload symbols from a\
+      \ pair of packets\n    \"\"\"\n\n    rolling = 0\n    fixed = 0\n\n    for i\
+      \ in range(0, 40, 2):\n        if i in [0, 20]:\n            acc = 0\n\n   \
+      \     digit = code[i]\n        rolling = (rolling * 3) + digit\n        acc\
+      \ += digit\n\n        digit = (code[i+1] - acc) % 3\n        fixed = (fixed\
+      \ * 3) + digit\n        acc += digit\n\n    rolling = int(f\"{rolling:032b}\"\
+      [::-1], 2)\n    return rolling, fixed\n\n\ndef _v2_calc_parity(fixed, data):\n\
+      \    data &= 0xffff0fff\n    parity = (fixed >> 32) & 0xf\n    for offset in\
+      \ range(0, 32, 4):\n        parity ^= ((data >> offset) & 0xf)\n    data |=\
+      \ (parity << 12)\n    return data\n\n\ndef _v2_check_parity(fixed, data):\n\
+      \    parity = (fixed >> 32) & 0xf\n    for offset in range(0, 32, 4):\n    \
+      \    parity ^= ((data >> offset) & 0xf)\n    if parity != 0:\n        raise\
+      \ ValueError(\"Parity bits are incorrect\")\n\n\ndef _encode_v2_rolling(rolling):\n\
+      \    rolling = int(f\"{rolling:028b}\"[::-1], 2)\n    rolling_base3 = [0] *\
+      \ 18\n    for i in range(17, -1, -1):\n        rolling_base3[i] = rolling %\
+      \ 3\n        rolling //= 3\n    rolling1 = rolling_base3[14:18] + rolling_base3[6:10]\
+      \ + rolling_base3[1:2]\n    rolling2 = rolling_base3[10:14] + rolling_base3[2:6]\
+      \ + rolling_base3[0:1]\n    return rolling1, rolling2\n\n\ndef _decode_v2_rolling(rolling1,\
+      \ rolling2):\n    rolling_digits = rolling2[8:] + rolling1[8:]\n    rolling_digits\
+      \ += rolling2[4:8] + rolling1[4:8]\n    rolling_digits += rolling2[:4] + rolling1[:4]\n\
+      \n    rolling = 0\n    for digit in rolling_digits:\n        rolling = (rolling\
+      \ * 3) + digit\n    if rolling >= 2**28:\n        raise ValueError(\"Rolling\
+      \ code was not in expected range\")\n    return int(f\"{rolling:028b}\"[::-1],\
+      \ 2)\n\n\ndef _v2_combine_halves(rolling1, rolling2, fixed1, fixed2, data1,\
+      \ data2):\n    rolling = _decode_v2_rolling(rolling1, rolling2)\n    fixed =\
+      \ int(\"\".join(str(bit) for bit in fixed1 + fixed2), 2)\n    if data1 is None:\n\
+      \        data = None\n    else:\n        data = int(\"\".join(str(bit) for bit\
+      \ in data1 + data2), 2)\n        _v2_check_parity(fixed, data)\n    return rolling,\
+      \ fixed, data\n\n\n_ORDER = {\n    0b0000: (0, 2, 1),\n    0b0001: (2, 0, 1),\n\
+      \    0b0010: (0, 1, 2),\n    0b0100: (1, 2, 0),\n    0b0101: (1, 0, 2),\n  \
+      \  0b0110: (2, 1, 0),\n    0b1000: (1, 2, 0),\n    0b1001: (2, 1, 0),\n    0b1010:\
+      \ (0, 1, 2),\n}\n\n_INVERT = {\n    0b0000: (True, True, False),\n    0b0001:\
+      \ (False, True, False),\n    0b0010: (False, False, True),\n    0b0100: (True,\
+      \ True, True),\n    0b0101: (True, False, True),\n    0b0110: (False, True,\
+      \ True),\n    0b1000: (True, False, False),\n    0b1001: (False, False, False),\n\
+      \    0b1010: (True, False, True),\n}\n\n\ndef _v2_scramble(indicator, parts):\n\
+      \    order = _ORDER[(indicator[0] << 3) | (indicator[1] << 2) | (indicator[2]\
+      \ << 1) | indicator[3]]\n    invert = _INVERT[(indicator[4] << 3) | (indicator[5]\
+      \ << 2) | (indicator[6] << 1) | indicator[7]]\n\n    parts_permuted = [parts[order[i]]\
+      \ for i in range(3)]\n    for i in range(3):\n        if invert[i]:\n      \
+      \      parts_permuted[i] = [bit ^ 1 for bit in parts_permuted[i]]\n\n    payload\
+      \ = []\n    for i in range(len(parts_permuted[0])):\n        payload += [parts_permuted[0][i],\
+      \ parts_permuted[1][i], parts_permuted[2][i]]\n    return payload\n\n\ndef _v2_unscramble(indicator,\
+      \ payload):\n    try:\n        order = _ORDER[(indicator[0] << 3) | (indicator[1]\
+      \ << 2) | (indicator[2] << 1) | indicator[3]]\n        invert = _INVERT[(indicator[4]\
+      \ << 3) | (indicator[5] << 2) | (indicator[6] << 1) | indicator[7]]\n    except\
+      \ KeyError:\n        raise ValueError(\"Illegal value for ternary bit\")\n\n\
+      \    parts_permuted = [payload[0::3], payload[1::3], payload[2::3]]\n    for\
+      \ i in range(3):\n        if invert[i]:\n            parts_permuted[i] = [bit\
+      \ ^ 1 for bit in parts_permuted[i]]\n\n    parts = [[], [], []]\n    for i in\
+      \ range(3):\n        parts[order[i]] = parts_permuted[i]\n\n    return parts\n\
+      \n\ndef _encode_v2_half_parts(rolling, fixed, data):\n    indicator = []\n \
+      \   for digit in rolling[:4]:\n        indicator.append(digit >> 1)\n      \
+      \  indicator.append(digit & 1)\n\n    parts = [fixed[:10], fixed[10:], []]\n\
+      \    for digit in rolling[4:]:\n        parts[2].append(digit >> 1)\n      \
+      \  parts[2].append(digit & 1)\n\n    if data is None:\n        packet_type =\
+      \ 0\n    if data is not None:\n        packet_type = 1\n        parts[0] +=\
+      \ data[:8]\n        parts[1] += data[8:]\n        for digit in rolling[:4]:\n\
+      \            parts[2].append(digit >> 1)\n            parts[2].append(digit\
+      \ & 1)\n\n    payload = _v2_scramble(indicator, parts)\n\n    return packet_type,\
+      \ indicator, payload\n\n\ndef _decode_v2_half_parts(packet_type, indicator,\
+      \ payload):\n    if packet_type == 0:\n        payload_length = 30\n    elif\
+      \ packet_type == 1:\n        payload_length = 54\n    elif packet_type == 2:\n\
+      \        raise ValueError(\"Unsupported packet type\")\n    else:\n        raise\
+      \ ValueError(\"Invalid packet type\")\n\n    if len(payload) != payload_length:\n\
+      \        raise ValueError(\"Incorrect payload length\")\n\n    parts = _v2_unscramble(indicator,\
+      \ payload)\n\n    rolling = []\n    for i in range(0, len(indicator), 2):\n\
+      \        rolling.append((indicator[i] << 1) | indicator[i+1])\n    for i in\
+      \ range(0, len(parts[2]), 2):\n        rolling.append((parts[2][i] << 1) | parts[2][i+1])\n\
+      \    if 3 in rolling:\n        raise ValueError(\"Illegal value for ternary\
+      \ bit\")\n\n    fixed = parts[0][:10] + parts[1][:10]\n\n    if packet_type\
+      \ == 0:\n        data = None\n    elif packet_type == 1:\n        if rolling[:4]\
+      \ != rolling[-4:]:\n            raise ValueError(\"Last four ternary bits do\
+      \ not repeat first four\")\n        rolling = rolling[:-4]\n        data = parts[0][10:]\
+      \ + parts[1][10:]\n\n    return rolling, fixed, data\n\n\ndef _v2_check_limits(rolling,\
+      \ fixed, data):\n    if rolling >= 2**28:\n        raise ValueError(\"Rolling\
+      \ code must be less than 2^28\")\n    if fixed >= 2**40:\n        raise ValueError(\"\
+      Fixed code must be less than 2^40\")\n    if data is not None:\n        if data\
+      \ >= 2**32:\n            raise ValueError(\"Data must be less than 2^32\")\n\
+      \n\ndef _encode_v2_half(rolling, fixed, data):\n    packet_type, indicator,\
+      \ payload = _encode_v2_half_parts(rolling, fixed, data)\n    packet_type_bits\
+      \ = [packet_type >> 1, packet_type & 1]\n    return packet_type_bits + indicator\
+      \ + payload\n\n\ndef encode_v2(rolling, fixed, data=None):\n    \"\"\"Encode\
+      \ a Security+ 2.0 payload into 80 or 128 bits\n\n    Arguments:\n    rolling\
+      \ -- the rolling code (28 bits)\n    fixed -- the fixed code (40 bits)\n   \
+      \ data -- the data (32 bits, optional)\n\n    Raises a ValueError if the rolling\
+      \ or fixed code is too large.\n    \"\"\"\n\n    _v2_check_limits(rolling, fixed,\
+      \ data)\n\n    rolling1, rolling2 = _encode_v2_rolling(rolling)\n\n    fixed_bits\
+      \ = [int(bit) for bit in f\"{fixed:040b}\"]\n    fixed1 = fixed_bits[:20]\n\
+      \    fixed2 = fixed_bits[20:]\n\n    if data is None:\n        data1 = None\n\
+      \        data2 = None\n    else:\n        data = _v2_calc_parity(fixed, data)\n\
+      \        data_bits = [int(bit) for bit in f\"{data:032b}\"]\n        data1 =\
+      \ data_bits[:16]\n        data2 = data_bits[16:]\n\n    return _encode_v2_half(rolling1,\
+      \ fixed1, data1) + _encode_v2_half(rolling2, fixed2, data2)\n\n\ndef _decode_v2_half(code):\n\
+      \    packet_type = (code[0] << 1) | code[1]\n    indicator = code[2:10]\n  \
+      \  payload = code[10:]\n    return _decode_v2_half_parts(packet_type, indicator,\
+      \ payload)\n\n\ndef decode_v2(code):\n    \"\"\"Decode a Security+ 2.0 transmission\
+      \ and return the rolling code, fixed\n    code, and data.\n\n    Arguments:\n\
+      \    code -- a list containing the 80 or 128 payload bits from a pair of packets\n\
+      \n    Raises a ValueError if the payload bits are invalid for any reason.\n\
+      \    \"\"\"\n    half_len = len(code) // 2\n    rolling1, fixed1, data1 = _decode_v2_half(code[:half_len])\n\
+      \    rolling2, fixed2, data2 = _decode_v2_half(code[half_len:])\n    return\
+      \ _v2_combine_halves(rolling1, rolling2, fixed1, fixed2, data1, data2)\n\n\n\
+      def _encode_wireline_half(rolling, fixed, data):\n    _, indicator, payload\
+      \ = _encode_v2_half_parts(rolling, fixed, data)\n    return indicator + [0,\
+      \ 0] + payload\n\n\ndef encode_wireline(rolling, fixed, data):\n    \"\"\"Encode\
+      \ a Security+ 2.0 wireline payload into 19 bytes\n\n    Arguments:\n    rolling\
+      \ -- the rolling code (28 bits)\n    fixed -- the fixed code (40 bits)\n   \
+      \ data -- the data (32 bits)\n\n    Raises a ValueError if the rolling code,\
+      \ fixed code, or data is too large.\n    \"\"\"\n\n    _v2_check_limits(rolling,\
+      \ fixed, data)\n\n    rolling1, rolling2 = _encode_v2_rolling(rolling)\n\n \
+      \   fixed_bits = [int(bit) for bit in f\"{fixed:040b}\"]\n    fixed1 = fixed_bits[:20]\n\
+      \    fixed2 = fixed_bits[20:]\n\n    data = _v2_calc_parity(fixed, data)\n \
+      \   data_bits = [int(bit) for bit in f\"{data:032b}\"]\n    data1 = data_bits[:16]\n\
+      \    data2 = data_bits[16:]\n\n    payload_bits = _encode_wireline_half(rolling1,\
+      \ fixed1, data1) + _encode_wireline_half(rolling2, fixed2, data2)\n    packet\
+      \ = [0x55, 0x01, 0x00]\n    for n in range(len(payload_bits) // 8):\n      \
+      \  byte = 0\n        for bit in range(8):\n            byte |= payload_bits[n\
+      \ * 8 + bit] << (7 - bit)\n        packet.append(byte)\n    return bytes(packet)\n\
+      \n\ndef _decode_wireline_half(code):\n    if code[8:10] != [0, 0]:\n       \
+      \ raise ValueError(\"Unexpected values for bits 8 and 9\")\n    indicator =\
+      \ code[:8]\n    payload = code[10:]\n    return _decode_v2_half_parts(1, indicator,\
+      \ payload)\n\n\ndef decode_wireline(code):\n    \"\"\"Decode a Security+ 2.0\
+      \ wireline transmission and return the rolling code,\n    fixed code, and data.\n\
+      \n    Arguments:\n    code -- a bytes object with the 19 bytes of a serial packet\n\
+      \n    Raises a ValueError if the payload bytes are invalid for any reason.\n\
+      \    \"\"\"\n    if not isinstance(code, bytes):\n        raise ValueError(\"\
+      Input must be bytes\")\n    if len(code) != 19:\n        raise ValueError(\"\
+      Input must be 19 bytes long\")\n    if code[:3] != bytes([0x55, 0x01, 0x00]):\n\
+      \        raise ValueError(\"First three bytes must be 0x55, 0x01, 0x00\")\n\n\
+      \    code_bits = []\n    for b in code[3:]:\n        for bit in range(7, -1,\
+      \ -1):\n            code_bits.append((b >> bit) & 1)\n\n    half_len = len(code_bits)\
+      \ // 2\n    rolling1, fixed1, data1 = _decode_wireline_half(code_bits[:half_len])\n\
+      \    rolling2, fixed2, data2 = _decode_wireline_half(code_bits[half_len:])\n\
+      \    return _v2_combine_halves(rolling1, rolling2, fixed1, fixed2, data1, data2)\n\
+      \n\n_OOK = {\n    -1: [0, 0, 0, 0],\n    0: [0, 0, 0, 1],\n    1: [0, 0, 1,\
+      \ 1],\n    2: [0, 1, 1, 1]\n}\n\n\ndef encode_ook(rolling, fixed, fast=True):\n\
+      \    \"\"\"Encode a Security+ payload and produce an OOK stream for transmission\n\
+      \n    The resulting pulses should be transmitted at a baud rate of 2000. That\
+      \ is,\n    each 0 (off) or 1 (on) should be 0.5 ms long.\n\n    Arguments:\n\
+      \    rolling -- the rolling code\n    fixed -- the fixed code\n    fast -- when\
+      \ True, shortens the time between packets\n    \"\"\"\n\n    code = encode(rolling,\
+      \ fixed)\n    blank = [-1] * (10 if fast else 29)\n    code = [0] + code[0:20]\
+      \ + blank + [2] + code[20:40] + blank\n    ook_bits = []\n    for symbol in\
+      \ code:\n        ook_bits += _OOK[symbol]\n    return ook_bits\n\n\ndef _manchester(code):\n\
+      \    output = []\n    for bit in code:\n        if bit == 0:\n            output\
+      \ += [1, 0]\n        else:\n            output += [0, 1]\n    return output\n\
+      \n\ndef encode_v2_manchester(rolling, fixed, data=None, fast=True):\n    \"\"\
+      \"Encode a Security+ 2.0 payload and produce a Manchester stream for transmission\n\
+      \n    The resulting pulses should be transmitted at a baud rate of 4000. That\
+      \ is,\n    each 0 (off) or 1 (on) should be 0.25 ms long.\n\n    Arguments:\n\
+      \    rolling -- the rolling code (28 bits)\n    fixed -- the fixed code (40\
+      \ bits)\n    data -- the data (32 bits, optional)\n    fast -- when True, shortens\
+      \ the time between packets\n    \"\"\"\n\n    preamble = [0, 0, 0, 0, 0, 0,\
+      \ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1]\n    code = encode_v2(rolling, fixed,\
+      \ data)\n    half_len = len(code) // 2\n    packet1 = preamble + [0, 0] + code[:half_len]\n\
+      \    packet2 = preamble + [0, 1] + code[half_len:]\n    blank = [0] * (33 if\
+      \ fast else 400 - 2 * len(packet1))\n\n    return _manchester(packet1) + blank\
+      \ + _manchester(packet2) + blank\n\n\ndef pretty(rolling, fixed):\n    \"\"\"\
+      Pretty-print a Security+ rolling and fixed code\"\"\"\n    return f\"Security+:\
+      \  rolling={rolling}  fixed={fixed}  ({_fixed_pretty(fixed)})\"\n\n\ndef _fixed_pretty(fixed):\n\
+      \    switch_id = fixed % 3\n    id0 = (fixed // 3) % 3\n    id1 = (fixed //\
+      \ 3**2) % 3\n\n    result = f\"id1={id1} id0={id0} switch={switch_id}\"\n\n\
+      \    if id1 == 0:\n        pad_id = (fixed // 3**3) % (3**7)\n        result\
+      \ += f\" pad_id={pad_id}\"\n        pin = (fixed // 3**10) % (3**9)\n      \
+      \  if 0 <= pin <= 9999:\n            result += f\" pin={pin:04}\"\n        elif\
+      \ 10000 <= pin <= 11029:\n            result += \" pin=enter\"\n        pin_suffix\
+      \ = (fixed // 3**19) % 3\n        if pin_suffix == 1:\n            result +=\
+      \ \"#\"\n        elif pin_suffix == 2:\n            result += \"*\"\n    else:\n\
+      \        remote_id = (fixed // 3**3)\n        result += f\" remote_id={remote_id}\"\
+      \n        if switch_id == 0:\n            button = \"middle\"\n        elif\
+      \ switch_id == 1:\n            button = \"left\"\n        else:\n          \
+      \  button = \"right\"\n        result += f\" button={button}\"\n\n    return\
+      \ result\n\n\ndef pretty_v2(rolling, fixed, data=None):\n    \"\"\"Pretty-print\
+      \ a Security+ 2.0 rolling code, fixed code, and data\"\"\"\n    pretty = f\"\
+      Security+ 2.0:  rolling=0x{rolling:07x}  fixed=0x{fixed:010x}  ({_fixed_pretty_v2(fixed)})\"\
+      \n    if data is not None:\n        pretty += f\"  data=0x{data:08x}  ({_data_pretty_v2(fixed,\
+      \ data)})\"\n    return pretty\n\n\ndef _fixed_pretty_v2(fixed):\n    button\
+      \ = (fixed >> 32) & 0xf\n    remote_id = fixed & 0xf0ffffffff\n    return f\"\
+      button={button} remote_id=0x{remote_id:010x}\"\n\n\ndef _data_pretty_v2(fixed,\
+      \ data):\n    button = (fixed >> 32) & 0xf\n\n    byte1 = data >> 24\n    byte2\
+      \ = (data >> 16) & 0xff\n    pin = (byte2 << 8) | byte1\n\n    tail = data &\
+      \ 0xfff\n\n    if button == 3:\n        return f\"pin=enter tail=0x{tail:03x}\"\
+      \n    else:\n        if button == 1:\n            suffix = \"*\"\n        elif\
+      \ button == 2:\n            suffix = \"#\"\n        else:\n            suffix\
+      \ = \"\"\n\n        return f\"pin={pin:04}{suffix} tail=0x{tail:03x}\"\n\n\n\
+      _WIRELINE_COMMANDS = {\n    # sent by opener\n    0x081: \"status\",\n    0x084:\
+      \ \"unknown_1\",\n    0x085: \"unknown_2\",\n    0x0a1: \"pair_3_resp\",\n \
+      \   0x284: \"motor_on\",\n    0x393: \"learn_3_resp\",\n    0x401: \"pair_2_resp\"\
+      ,\n    0x48c: \"openings\",\n\n    # sent by switch\n    0x080: \"get_status\"\
+      ,\n    0x0a0: \"pair_3\",\n    0x181: \"learn_2\",\n    0x18c: \"lock\",\n \
+      \   0x280: \"open\",\n    0x281: \"light\",\n    0x285: \"motion\",\n    0x391:\
+      \ \"learn_1\",\n    0x392: \"learn_3\",\n    0x400: \"pair_2\",\n    0x48b:\
+      \ \"get_openings\",\n}\n\n_DOOR_STATUS = {\n    1: \"open\",\n    2: \"closed\"\
+      ,\n    3: \"stopped\",\n    4: \"opening\",\n    5: \"closing\",\n}\n\n\ndef\
+      \ pretty_wireline(rolling, fixed, data):\n    cmd = ((fixed >> 24) & 0xf00)\
+      \ | (data & 0xff)\n    command_name = _WIRELINE_COMMANDS.get(cmd, \"<unknown>\"\
+      )\n\n    nibble = (data >> 8) & 0xf\n    byte1 = (data >> 16) & 0xff\n    byte2\
+      \ = (data >> 24) & 0xff\n\n    msg = \"\"\n    if cmd == 0x080:\n        msg\
+      \ = f\"byte2={byte2}\"\n    elif cmd == 0x081:\n        door = _DOOR_STATUS.get(nibble,\
+      \ \"<unknown>\")\n        learn = (byte2 >> 5) & 1\n        unk1 = (byte2 >>\
+      \ 4) & 1\n        unk2 = (byte2 >> 2) & 1\n        light = (byte2 >> 1) & 1\n\
+      \        lock = byte2 & 1\n        blocked = (byte1 >> 6) & 1\n        unk3\
+      \ = (byte1 >> 5) & 1\n        msg = f\"door={door} learn={learn} light={light}\
+      \ lock={lock} blocked={blocked^1} unk1={unk1} unk2={unk2} unk3={unk3}\"\n  \
+      \  elif cmd == 0x0a1:\n        msg = f\"byte1={byte1}\"\n    elif cmd == 0x181:\n\
+      \        msg = f\"nibble={nibble}\"\n    elif cmd == 0x280:\n        msg = \"\
+      pressed\" if byte1 == 1 else \"released\"\n    elif cmd == 0x391:\n        msg\
+      \ = f\"nibble={nibble}\"\n    elif cmd == 0x393:\n        msg = f\"nibble={nibble}\"\
+      \n    elif cmd == 0x48c:\n        openings = (byte1 << 8) | byte2\n        msg\
+      \ = f\"number={openings}\"\n\n    return f\"rolling=0x{rolling:07x} fixed=0x{fixed:010x}\
+      \ data=0x{data:08x} cmd=0x{cmd:03x} {command_name} {msg}\".strip()\n"
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 92.0]
+    rotation: 0
+    state: enabled
 - name: single_pole_iir_filter_xx_0
   id: single_pole_iir_filter_xx
   parameters:
@@ -488,4 +727,4 @@ connections:
 
 metadata:
   file_format: 1
-  grc_version: 3.10.5.0
+  grc_version: 3.10.9.2

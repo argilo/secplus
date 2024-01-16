@@ -84,7 +84,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [152, 332.0]
+    coordinate: [232, 332.0]
     rotation: 0
     state: enabled
 - name: samp_rate
@@ -96,7 +96,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [8, 76]
+    coordinate: [8, 140.0]
     rotation: 0
     state: enabled
 - name: threshold
@@ -124,7 +124,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [856, 184.0]
+    coordinate: [936, 184.0]
     rotation: 0
     state: enabled
 - name: blocks_rotator_cc_0
@@ -141,7 +141,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [432, 168.0]
+    coordinate: [512, 168.0]
     rotation: 0
     state: enabled
 - name: import_0
@@ -154,7 +154,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [8, 404]
+    coordinate: [8, 76.0]
     rotation: 0
     state: enabled
 - name: osmosdr_source_0
@@ -511,7 +511,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [136, 76.0]
+    coordinate: [216, 76.0]
     rotation: 0
     state: enabled
 - name: qtgui_time_sink_x_0
@@ -608,7 +608,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [576, 420.0]
+    coordinate: [656, 420.0]
     rotation: 180
     state: enabled
 - name: rational_resampler_xxx_0
@@ -628,7 +628,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [664, 156.0]
+    coordinate: [744, 156.0]
     rotation: 0
     state: enabled
 - name: rational_resampler_xxx_1
@@ -648,7 +648,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [792, 332.0]
+    coordinate: [872, 332.0]
     rotation: 180
     state: enabled
 - name: secplus_decode
@@ -664,10 +664,10 @@ blocks:
       \  See the\n# GNU General Public License for more details.\n#\n# You should\
       \ have received a copy of the GNU General Public License\n# along with secplus.\
       \  If not, see <http://www.gnu.org/licenses/>.\n#\n\nimport numpy as np\nfrom\
-      \ gnuradio import gr\nimport secplus\n\n\nclass blk(gr.sync_block):\n    \"\"\
-      \"Decoder for Chamberlain garage door openers\"\"\"\n\n    def __init__(self,\
-      \ samp_rate=10000, threshold=0.02):\n        gr.sync_block.__init__(\n     \
-      \       self,\n            name='Security+ Decoder',\n\n            in_sig=[np.float32],\n\
+      \ gnuradio import gr\ntry:\n    import secplus\nexcept:\n    pass\n\n\nclass\
+      \ blk(gr.sync_block):\n    \"\"\"Decoder for Chamberlain garage door openers\"\
+      \"\"\n\n    def __init__(self, samp_rate=10000, threshold=0.02):\n        gr.sync_block.__init__(\n\
+      \            self,\n            name='Security+ Decoder',\n\n            in_sig=[np.float32],\n\
       \            out_sig=[]\n        )\n        self.samp_rate = samp_rate\n   \
       \     self.threshold = threshold\n        self.last_sample = 0.0\n        self.last_rise\
       \ = 0\n        self.buffer = []\n        self.last_pair = []\n        self.pair\
@@ -707,7 +707,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [576, 276.0]
+    coordinate: [656, 276.0]
     rotation: 180
     state: enabled
 - name: secplus_v2_decode
@@ -723,23 +723,23 @@ blocks:
       \  See the\n# GNU General Public License for more details.\n#\n# You should\
       \ have received a copy of the GNU General Public License\n# along with secplus.\
       \  If not, see <http://www.gnu.org/licenses/>.\n#\n\nimport numpy as np\nfrom\
-      \ gnuradio import gr\nimport secplus\n\n\nclass blk(gr.sync_block):\n    \"\"\
-      \"Decoder for Chamberlain garage door openers\"\"\"\n\n    def __init__(self,\
-      \ samp_rate=10000, threshold=0.02):\n        gr.sync_block.__init__(\n     \
-      \       self,\n            name='Security+ 2.0 Decoder',\n\n            in_sig=[np.float32],\n\
-      \            out_sig=[]\n        )\n        self.samp_rate = samp_rate\n   \
-      \     self.threshold = threshold\n        self.last_sample = 0.0\n        self.last_edge\
-      \ = 0\n        self.buffer = []\n        self.pair = [None, None]\n        self.pair_time\
-      \ = [None, None]\n\n    def work(self, input_items, output_items):\n       \
-      \ for n, sample in enumerate(input_items[0]):\n            current_sample =\
-      \ self.nitems_read(0) + n\n            if self.last_sample < self.threshold\
-      \ <= sample:\n                # rising edge\n                self.process_edge(True,\
+      \ gnuradio import gr\ntry:\n    import secplus\nexcept:\n    pass\n\n\nclass\
+      \ blk(gr.sync_block):\n    \"\"\"Decoder for Chamberlain garage door openers\"\
+      \"\"\n\n    def __init__(self, samp_rate=10000, threshold=0.02):\n        gr.sync_block.__init__(\n\
+      \            self,\n            name='Security+ 2.0 Decoder',\n\n          \
+      \  in_sig=[np.float32],\n            out_sig=[]\n        )\n        self.samp_rate\
+      \ = samp_rate\n        self.threshold = threshold\n        self.last_sample\
+      \ = 0.0\n        self.last_edge = 0\n        self.buffer = []\n        self.pair\
+      \ = [None, None]\n        self.pair_time = [None, None]\n\n    def work(self,\
+      \ input_items, output_items):\n        for n, sample in enumerate(input_items[0]):\n\
+      \            current_sample = self.nitems_read(0) + n\n            if self.last_sample\
+      \ < self.threshold <= sample:\n                # rising edge\n             \
+      \   self.process_edge(True, current_sample - self.last_edge)\n             \
+      \   self.last_edge = current_sample\n            elif self.last_sample >= self.threshold\
+      \ > sample:\n                # falling edge\n                self.process_edge(False,\
       \ current_sample - self.last_edge)\n                self.last_edge = current_sample\n\
-      \            elif self.last_sample >= self.threshold > sample:\n           \
-      \     # falling edge\n                self.process_edge(False, current_sample\
-      \ - self.last_edge)\n                self.last_edge = current_sample\n     \
-      \       if current_sample - self.last_edge >= 0.625e-3 * self.samp_rate:\n \
-      \               self.buffer.append(0)\n                self.buffer.append(0)\n\
+      \            if current_sample - self.last_edge >= 0.625e-3 * self.samp_rate:\n\
+      \                self.buffer.append(0)\n                self.buffer.append(0)\n\
       \                self.process_buffer(current_sample)\n                self.buffer\
       \ = []\n            self.last_sample = sample\n        return len(input_items[0])\n\
       \n    def process_edge(self, rising, samples):\n        if samples < 0.125e-3\
@@ -781,7 +781,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [560, 348.0]
+    coordinate: [640, 348.0]
     rotation: 180
     state: enabled
 
