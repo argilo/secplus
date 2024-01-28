@@ -664,26 +664,26 @@ blocks:
       \  See the\n# GNU General Public License for more details.\n#\n# You should\
       \ have received a copy of the GNU General Public License\n# along with secplus.\
       \  If not, see <http://www.gnu.org/licenses/>.\n#\n\nimport numpy as np\nfrom\
-      \ gnuradio import gr\ntry:\n    import secplus\nexcept:\n    pass\n\n\nclass\
-      \ blk(gr.sync_block):\n    \"\"\"Decoder for Chamberlain garage door openers\"\
-      \"\"\n\n    def __init__(self, samp_rate=10000, threshold=0.02):\n        gr.sync_block.__init__(\n\
-      \            self,\n            name='Security+ Decoder',\n\n            in_sig=[np.float32],\n\
-      \            out_sig=[]\n        )\n        self.samp_rate = samp_rate\n   \
-      \     self.threshold = threshold\n        self.last_sample = 0.0\n        self.last_rise\
-      \ = 0\n        self.buffer = []\n        self.last_pair = []\n        self.pair\
-      \ = []\n\n    def work(self, input_items, output_items):\n        for n, sample\
-      \ in enumerate(input_items[0]):\n            current_sample = self.nitems_read(0)\
-      \ + n\n            if self.last_sample < self.threshold <= sample:\n       \
-      \         # rising edge\n                self.last_rise = current_sample\n \
-      \           elif self.last_sample >= self.threshold > sample:\n            \
-      \    # falling edge\n                on_samples = current_sample - self.last_rise\n\
-      \                self.process_symbol(on_samples)\n            if current_sample\
-      \ - self.last_rise > 3.25e-3 * self.samp_rate:\n                self.buffer\
-      \ = []\n            self.last_sample = sample\n        return len(input_items[0])\n\
-      \n    def process_symbol(self, on_samples):\n        if on_samples < 0.35e-3\
-      \ * self.samp_rate:\n            self.buffer = []\n        elif on_samples <\
-      \ 0.75e-3 * self.samp_rate:\n            self.buffer.append(0)\n        elif\
-      \ on_samples < 1.25e-3 * self.samp_rate:\n            self.buffer.append(1)\n\
+      \ gnuradio import gr\nif __name__ != \"builtins\":  # Don't import within GRC\n\
+      \    import secplus\n\n\nclass blk(gr.sync_block):\n    \"\"\"Decoder for Chamberlain\
+      \ garage door openers\"\"\"\n\n    def __init__(self, samp_rate=10000, threshold=0.02):\n\
+      \        gr.sync_block.__init__(\n            self,\n            name='Security+\
+      \ Decoder',\n\n            in_sig=[np.float32],\n            out_sig=[]\n  \
+      \      )\n        self.samp_rate = samp_rate\n        self.threshold = threshold\n\
+      \        self.last_sample = 0.0\n        self.last_rise = 0\n        self.buffer\
+      \ = []\n        self.last_pair = []\n        self.pair = []\n\n    def work(self,\
+      \ input_items, output_items):\n        for n, sample in enumerate(input_items[0]):\n\
+      \            current_sample = self.nitems_read(0) + n\n            if self.last_sample\
+      \ < self.threshold <= sample:\n                # rising edge\n             \
+      \   self.last_rise = current_sample\n            elif self.last_sample >= self.threshold\
+      \ > sample:\n                # falling edge\n                on_samples = current_sample\
+      \ - self.last_rise\n                self.process_symbol(on_samples)\n      \
+      \      if current_sample - self.last_rise > 3.25e-3 * self.samp_rate:\n    \
+      \            self.buffer = []\n            self.last_sample = sample\n     \
+      \   return len(input_items[0])\n\n    def process_symbol(self, on_samples):\n\
+      \        if on_samples < 0.35e-3 * self.samp_rate:\n            self.buffer\
+      \ = []\n        elif on_samples < 0.75e-3 * self.samp_rate:\n            self.buffer.append(0)\n\
+      \        elif on_samples < 1.25e-3 * self.samp_rate:\n            self.buffer.append(1)\n\
       \        elif on_samples < 1.75e-3 * self.samp_rate:\n            self.buffer.append(2)\n\
       \        else:\n            self.buffer = []\n\n        if len(self.buffer)\
       \ == 21:\n            self.process_buffer()\n            self.buffer = []\n\n\
@@ -723,15 +723,15 @@ blocks:
       \  See the\n# GNU General Public License for more details.\n#\n# You should\
       \ have received a copy of the GNU General Public License\n# along with secplus.\
       \  If not, see <http://www.gnu.org/licenses/>.\n#\n\nimport numpy as np\nfrom\
-      \ gnuradio import gr\ntry:\n    import secplus\nexcept:\n    pass\n\n\nclass\
-      \ blk(gr.sync_block):\n    \"\"\"Decoder for Chamberlain garage door openers\"\
-      \"\"\n\n    def __init__(self, samp_rate=10000, threshold=0.02):\n        gr.sync_block.__init__(\n\
-      \            self,\n            name='Security+ 2.0 Decoder',\n\n          \
-      \  in_sig=[np.float32],\n            out_sig=[]\n        )\n        self.samp_rate\
-      \ = samp_rate\n        self.threshold = threshold\n        self.last_sample\
-      \ = 0.0\n        self.last_edge = 0\n        self.buffer = []\n        self.pair\
-      \ = [None, None]\n        self.pair_time = [None, None]\n\n    def work(self,\
-      \ input_items, output_items):\n        for n, sample in enumerate(input_items[0]):\n\
+      \ gnuradio import gr\nif __name__ != \"builtins\":  # Don't import within GRC\n\
+      \    import secplus\n\n\nclass blk(gr.sync_block):\n    \"\"\"Decoder for Chamberlain\
+      \ garage door openers\"\"\"\n\n    def __init__(self, samp_rate=10000, threshold=0.02):\n\
+      \        gr.sync_block.__init__(\n            self,\n            name='Security+\
+      \ 2.0 Decoder',\n\n            in_sig=[np.float32],\n            out_sig=[]\n\
+      \        )\n        self.samp_rate = samp_rate\n        self.threshold = threshold\n\
+      \        self.last_sample = 0.0\n        self.last_edge = 0\n        self.buffer\
+      \ = []\n        self.pair = [None, None]\n        self.pair_time = [None, None]\n\
+      \n    def work(self, input_items, output_items):\n        for n, sample in enumerate(input_items[0]):\n\
       \            current_sample = self.nitems_read(0) + n\n            if self.last_sample\
       \ < self.threshold <= sample:\n                # rising edge\n             \
       \   self.process_edge(True, current_sample - self.last_edge)\n             \

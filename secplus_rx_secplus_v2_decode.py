@@ -19,10 +19,8 @@
 
 import numpy as np
 from gnuradio import gr
-try:
+if __name__ != "builtins":  # Don't import within GRC
     import secplus
-except:
-    pass
 
 
 class blk(gr.sync_block):
