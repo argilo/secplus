@@ -100,15 +100,24 @@ blocks:
     rotation: 0
     state: enabled
 - name: threshold
-  id: variable
+  id: variable_qtgui_range
   parameters:
     comment: ''
-    value: '0.05'
+    gui_hint: ''
+    label: Detection threshold
+    min_len: '200'
+    orient: QtCore.Qt.Horizontal
+    rangeType: float
+    start: '0.01'
+    step: '0.01'
+    stop: '1.00'
+    value: '0.10'
+    widget: counter_slider
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [8, 332]
+    coordinate: [8, 332.0]
     rotation: 0
     state: enabled
 - name: blocks_complex_to_mag_0

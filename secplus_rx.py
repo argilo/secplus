@@ -10,6 +10,7 @@
 
 from PyQt5 import Qt
 from gnuradio import qtgui
+from PyQt5 import QtCore
 from PyQt5.QtCore import QObject, pyqtSlot
 from gnuradio import blocks
 from gnuradio import filter
@@ -66,7 +67,7 @@ class secplus_rx(gr.top_block, Qt.QWidget):
         ##################################################
         # Variables
         ##################################################
-        self.threshold = threshold = 0.05
+        self.threshold = threshold = 0.10
         self.samp_rate = samp_rate = 2000000
         self.freq = freq = 315150000
         self.decim2 = decim2 = 50
@@ -76,6 +77,9 @@ class secplus_rx(gr.top_block, Qt.QWidget):
         # Blocks
         ##################################################
 
+        self._threshold_range = qtgui.Range(0.01, 1.00, 0.01, 0.10, 200)
+        self._threshold_win = qtgui.RangeWidget(self._threshold_range, self.set_threshold, "Detection threshold", "counter_slider", float, QtCore.Qt.Horizontal)
+        self.top_layout.addWidget(self._threshold_win)
         # Create the options list
         self._freq_options = [310150000, 315150000, 390150000]
         # Create the labels list
