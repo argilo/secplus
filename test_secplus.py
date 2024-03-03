@@ -151,15 +151,17 @@ class TestSecplus(unittest.TestCase):
         rolling = 2**32
         fixed = 3**20 - 1
 
-        with self.assertRaisesRegex(ValueError, r"Rolling code must be less than 2\^32"):
+        with self.assertRaises(ValueError) as cm:
             secplus.encode(rolling, fixed)
+        self.assertEqual(str(cm.exception), "Rolling code must be less than 2^32")
 
     def test_encode_fixed_limit(self):
         rolling = 2**32 - 1
         fixed = 3**20
 
-        with self.assertRaisesRegex(ValueError, r"Fixed code must be less than 3\^20|Invalid input"):
+        with self.assertRaises(ValueError) as cm:
             secplus.encode(rolling, fixed)
+        self.assertIn(str(cm.exception), ["Fixed code must be less than 3^20", "Invalid input"])
 
     def test_encode(self):
         for code, rolling, fixed in zip(self.v1_codes, self.v1_rolling_list, self.v1_fixed_list):
@@ -249,23 +251,26 @@ class TestSecplus(unittest.TestCase):
         rolling = 2**28
         fixed = 2**40 - 1
 
-        with self.assertRaisesRegex(ValueError, r"Rolling code must be less than 2\^28|Invalid input"):
+        with self.assertRaises(ValueError) as cm:
             secplus.encode_v2(rolling, fixed)
+        self.assertIn(str(cm.exception), ["Rolling code must be less than 2^28", "Invalid input"])
 
     def test_encode_v2_fixed_limit(self):
         rolling = 2**28 - 1
         fixed = 2**40
 
-        with self.assertRaisesRegex(ValueError, r"Fixed code must be less than 2\^40|Invalid input"):
+        with self.assertRaises(ValueError) as cm:
             secplus.encode_v2(rolling, fixed)
+        self.assertIn(str(cm.exception), ["Fixed code must be less than 2^40", "Invalid input"])
 
     def test_encode_v2_data_limit(self):
         rolling = 2**28 - 1
         fixed = 2**40 - 1
         data = 2**32
 
-        with self.assertRaisesRegex(ValueError, r"Data must be less than 2\^32"):
+        with self.assertRaises(ValueError) as cm:
             secplus.encode_v2(rolling, fixed, data)
+        self.assertEqual(str(cm.exception), "Data must be less than 2^32")
 
     def test_encode_v2_parity(self):
         for code, rolling, fixed, data in zip(self.v2_codes, self.v2_rolling_list,
@@ -328,8 +333,9 @@ class TestSecplus(unittest.TestCase):
             broken_code = code.copy()
             broken_code[offset] = 1
             broken_code[offset+1] = 0
-            with self.assertRaisesRegex(ValueError, "Unsupported packet type|Invalid input"):
+            with self.assertRaises(ValueError) as cm:
                 secplus.decode_v2(broken_code)
+            self.assertIn(str(cm.exception), ["Unsupported packet type", "Invalid input"])
 
     def test_decode_v2_invalid_type(self):
         code = [int(bit) for bit in self.v2_codes[0]]
@@ -338,8 +344,9 @@ class TestSecplus(unittest.TestCase):
             broken_code = code.copy()
             broken_code[offset] = 1
             broken_code[offset+1] = 1
-            with self.assertRaisesRegex(ValueError, "Invalid packet type|Invalid input"):
+            with self.assertRaises(ValueError) as cm:
                 secplus.decode_v2(broken_code)
+            self.assertIn(str(cm.exception), ["Invalid packet type", "Invalid input"])
 
     def test_decode_v2_incorrect_payload_length(self):
         for code in self.v2_codes:
@@ -348,8 +355,9 @@ class TestSecplus(unittest.TestCase):
                 broken_code = code + [random.randrange(2) for _ in range(80, 128)]
             elif len(code) == 128:
                 broken_code = code[:80]
-            with self.assertRaisesRegex(ValueError, "Incorrect payload length|Invalid input"):
+            with self.assertRaises(ValueError) as cm:
                 secplus.decode_v2(broken_code)
+            self.assertIn(str(cm.exception), ["Incorrect payload length", "Invalid input"])
 
     def test_decode_v2_invalid_ternary(self):
         code = [int(bit) for bit in self.v2_codes[0]]
@@ -358,8 +366,9 @@ class TestSecplus(unittest.TestCase):
             broken_code = code.copy()
             broken_code[bit] = 1
             broken_code[bit+1] = 1
-            with self.assertRaisesRegex(ValueError, "Illegal value for ternary bit|Invalid input"):
+            with self.assertRaises(ValueError) as cm:
                 secplus.decode_v2(broken_code)
+            self.assertIn(str(cm.exception), ["Illegal value for ternary bit", "Invalid input"])
 
     def test_decode_v2_invalid_ternary_2(self):
         code = "00101010011101111000010100011000010011100010101001110100011110110010110001000101"
@@ -369,8 +378,9 @@ class TestSecplus(unittest.TestCase):
             broken_code = code.copy()
             broken_code[bit] = 1
             broken_code[bit+3] = 1
-            with self.assertRaisesRegex(ValueError, "Illegal value for ternary bit|Invalid input"):
+            with self.assertRaises(ValueError) as cm:
                 secplus.decode_v2(broken_code)
+            self.assertIn(str(cm.exception), ["Illegal value for ternary bit", "Invalid input"])
 
     def test_decode_v2_incorrect_last_four_ternary(self):
         code = "01001010011101101001101100011110100000111001001011001010001101110100101001100001001100000000001100000000100100001100001000000001"
@@ -382,8 +392,9 @@ class TestSecplus(unittest.TestCase):
             for broken_bit in ((correct_bit + 1) % 3, (correct_bit + 2) % 3):
                 broken_code[bit] = broken_bit >> 1
                 broken_code[bit+3] = broken_bit & 1
-                with self.assertRaisesRegex(ValueError, "Last four ternary bits do not repeat first four|Invalid input"):
+                with self.assertRaises(ValueError) as cm:
                     secplus.decode_v2(broken_code)
+                self.assertIn(str(cm.exception), ["Last four ternary bits do not repeat first four", "Invalid input"])
 
     def test_decode_v2_invalid_rolling_code(self):
         code = "00101010011101111000010100011000010011100010101001110100011110110010110001000101"
@@ -393,8 +404,9 @@ class TestSecplus(unittest.TestCase):
         for bit in [12, 18, 24, 30, 36, 52, 58, 64, 70, 76]:
             broken_code[bit] = 1
             broken_code[bit+3] = 0
-        with self.assertRaisesRegex(ValueError, "Rolling code was not in expected range|Invalid input"):
+        with self.assertRaises(ValueError) as cm:
             secplus.decode_v2(broken_code)
+        self.assertIn(str(cm.exception), ["Rolling code was not in expected range", "Invalid input"])
 
     def test_decode_v2_incorrect_parity(self):
         code = "01001010011101101001101100011110100000111001001011001010001101110100101001100001001100000000001100000000100100001100001000000001"
@@ -403,8 +415,9 @@ class TestSecplus(unittest.TestCase):
         for bit in [22, 25, 28, 31] + list(range(40, 64, 3)) + list(range(41, 64, 3)) + list(range(104, 128, 3)) + list(range(105, 128, 3)):
             broken_code = code.copy()
             broken_code[bit] ^= 1
-            with self.assertRaisesRegex(ValueError, "Parity bits are incorrect|Invalid input"):
+            with self.assertRaises(ValueError) as cm:
                 secplus.decode_v2(broken_code)
+            self.assertIn(str(cm.exception), ["Parity bits are incorrect", "Invalid input"])
 
     def test_decode_v2_robustness(self):
         for _ in range(self.test_cycles):
@@ -487,36 +500,42 @@ class TestSecplus(unittest.TestCase):
                 pass
 
     def test_decode_wireline_input_validation(self):
-        with self.assertRaisesRegex(ValueError, "Input must be bytes"):
+        with self.assertRaises(ValueError) as cm:
             secplus.decode_wireline("foo")
-        with self.assertRaisesRegex(ValueError, "Input must be 19 bytes long"):
+        self.assertEqual(str(cm.exception), "Input must be bytes")
+        with self.assertRaises(ValueError) as cm:
             secplus.decode_wireline(b"foo")
-        with self.assertRaisesRegex(ValueError, "First three bytes must be 0x55, 0x01, 0x00|Invalid input"):
+        self.assertEqual(str(cm.exception), "Input must be 19 bytes long")
+        with self.assertRaises(ValueError) as cm:
             secplus.decode_wireline(b"foo bar foo bar foo")
+        self.assertIn(str(cm.exception), ["First three bytes must be 0x55, 0x01, 0x00", "Invalid input"])
 
     def test_encode_wireline_rolling_limit(self):
         rolling = 2**28
         fixed = 2**40 - 1
         data = 2**32 - 1
 
-        with self.assertRaisesRegex(ValueError, r"Rolling code must be less than 2\^28|Invalid input"):
+        with self.assertRaises(ValueError) as cm:
             secplus.encode_wireline(rolling, fixed, data)
+        self.assertIn(str(cm.exception), ["Rolling code must be less than 2^28", "Invalid input"])
 
     def test_encode_wireline_fixed_limit(self):
         rolling = 2**28 - 1
         fixed = 2**40
         data = 2**32 - 1
 
-        with self.assertRaisesRegex(ValueError, r"Fixed code must be less than 2\^40|Invalid input"):
+        with self.assertRaises(ValueError) as cm:
             secplus.encode_wireline(rolling, fixed, data)
+        self.assertIn(str(cm.exception), ["Fixed code must be less than 2^40", "Invalid input"])
 
     def test_encode_wireline_data_limit(self):
         rolling = 2**28 - 1
         fixed = 2**40 - 1
         data = 2**32
 
-        with self.assertRaisesRegex(ValueError, r"Data must be less than 2\^32"):
+        with self.assertRaises(ValueError) as cm:
             secplus.encode_wireline(rolling, fixed, data)
+        self.assertEqual(str(cm.exception), "Data must be less than 2^32")
 
     def test_decode_wireline_bits_8_9(self):
         for code in self.wireline_codes:
@@ -524,8 +543,9 @@ class TestSecplus(unittest.TestCase):
                 for bit_mask in (0x40, 0x80, 0xc0):
                     broken_code = code.copy()
                     broken_code[byte_offset] |= bit_mask
-                    with self.assertRaisesRegex(ValueError, "Unexpected values for bits 8 and 9|Invalid input"):
+                    with self.assertRaises(ValueError) as cm:
                         secplus.decode_wireline(bytes(broken_code))
+                    self.assertIn(str(cm.exception), ["Unexpected values for bits 8 and 9", "Invalid input"])
 
     def test_encode_wireline_parity(self):
         for code, rolling, fixed, data in zip(self.wireline_codes, self.wireline_rolling_list,
