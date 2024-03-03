@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright 2020,2022-2023 Clayton Smith (argilo@gmail.com)
+# Copyright 2020,2022-2024 Clayton Smith (argilo@gmail.com)
 #
 # This file is part of secplus.
 #
