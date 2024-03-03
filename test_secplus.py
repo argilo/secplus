@@ -30,7 +30,7 @@ from ctypes import *
 
 
 class TestSecplus(unittest.TestCase):
-    test_cycles = int(os.getenv("TEST_CYCLES", default=1000))
+    test_cycles = int(os.getenv("TEST_CYCLES") or "1000")
 
     v1_codes = """
     0010000211122102222101112211012101001110
@@ -204,8 +204,8 @@ class TestSecplus(unittest.TestCase):
         for _ in range(self.test_cycles):
             random_code = [random.randrange(3) for _ in range(40)]
             rolling, fixed = secplus.decode(random_code)
-            self.assertLess(rolling, 2**32)
-            self.assertLess(fixed, 3**20)
+            self.assertLessEqual(rolling, 2**32-1)
+            self.assertLessEqual(fixed, 3**20-1)
 
     def test_pretty(self):
         for pretty, rolling, fixed in zip(self.v1_pretty, self.v1_rolling_list, self.v1_fixed_list):
@@ -408,13 +408,13 @@ class TestSecplus(unittest.TestCase):
 
     def test_decode_v2_robustness(self):
         for _ in range(self.test_cycles):
-            random_code = [random.randrange(2) for _ in range(random.choice([80, 128]))]
+            random_code = [random.randrange(2) for _ in range([80, 128][random.randrange(2)])]
             try:
                 rolling, fixed, data = secplus.decode_v2(random_code)
-                self.assertLess(rolling, 2**28)
-                self.assertLess(fixed, 2**40)
+                self.assertLessEqual(rolling, 2**28-1)
+                self.assertLessEqual(fixed, 2**40-1)
                 if data is not None:
-                    self.assertLess(data, 2**32)
+                    self.assertLessEqual(data, 2**32-1)
             except ValueError:
                 pass
 
@@ -423,12 +423,12 @@ class TestSecplus(unittest.TestCase):
             fixed = random.randrange(2**40)
             data = random.randrange(2**32)
             code = secplus.encode_v2(rolling, fixed, data)
-            random_code = [b if random.random() > 1/64 else b ^ 1 for b in code]
+            random_code = [b if random.randrange(64) > 0 else b ^ 1 for b in code]
             try:
                 rolling, fixed, data = secplus.decode_v2(random_code)
-                self.assertLess(rolling, 2**28)
-                self.assertLess(fixed, 2**40)
-                self.assertLess(data, 2**32)
+                self.assertLessEqual(rolling, 2**28-1)
+                self.assertLessEqual(fixed, 2**40-1)
+                self.assertLessEqual(data, 2**32-1)
             except ValueError:
                 pass
 
@@ -466,9 +466,9 @@ class TestSecplus(unittest.TestCase):
             random_code = bytes([0x55, 0x01, 0x00] + [random.randrange(256) for _ in range(16)])
             try:
                 rolling, fixed, data = secplus.decode_wireline(random_code)
-                self.assertLess(rolling, 2**28)
-                self.assertLess(fixed, 2**40)
-                self.assertLess(data, 2**32)
+                self.assertLessEqual(rolling, 2**28-1)
+                self.assertLessEqual(fixed, 2**40-1)
+                self.assertLessEqual(data, 2**32-1)
             except ValueError:
                 pass
 
@@ -477,12 +477,12 @@ class TestSecplus(unittest.TestCase):
             fixed = random.randrange(2**40)
             data = random.randrange(2**32)
             code = secplus.encode_wireline(rolling, fixed, data)
-            random_code = bytes(b if random.random() > 1/19 else random.randrange(256) for b in code)
+            random_code = bytes(b if random.randrange(19) > 0 else random.randrange(256) for b in code)
             try:
                 rolling, fixed, data = secplus.decode_wireline(random_code)
-                self.assertLess(rolling, 2**28)
-                self.assertLess(fixed, 2**40)
-                self.assertLess(data, 2**32)
+                self.assertLessEqual(rolling, 2**28-1)
+                self.assertLessEqual(fixed, 2**40-1)
+                self.assertLessEqual(data, 2**32-1)
             except ValueError:
                 pass
 
