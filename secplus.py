@@ -24,6 +24,14 @@ applications.
 """
 
 
+def _reverse_int(n, bits):
+    result = 0
+    for _ in range(bits):
+        result = (result << 1) | (n & 1)
+        n >>= 1
+    return result
+
+
 def encode(rolling, fixed):
     """Encode a Security+ payload into 40 payload symbols
 
@@ -39,7 +47,7 @@ def encode(rolling, fixed):
     if fixed >= 3**20:
         raise ValueError("Fixed code must be less than 3^20")
 
-    rolling = int(f"{rolling & 0xfffffffe:032b}"[::-1], 2)
+    rolling = _reverse_int(rolling & 0xfffffffe, 32)
     rolling_base3 = [0] * 20
     fixed_base3 = [0] * 20
     for i in range(19, -1, -1):
@@ -80,7 +88,7 @@ def decode(code):
         fixed = (fixed * 3) + digit
         acc += digit
 
-    rolling = int(f"{rolling:032b}"[::-1], 2)
+    rolling = _reverse_int(rolling, 32)
     return rolling, fixed
 
 
@@ -102,7 +110,7 @@ def _v2_check_parity(fixed, data):
 
 
 def _encode_v2_rolling(rolling):
-    rolling = int(f"{rolling:028b}"[::-1], 2)
+    rolling = _reverse_int(rolling, 28)
     rolling_base3 = [0] * 18
     for i in range(17, -1, -1):
         rolling_base3[i] = rolling % 3
@@ -122,7 +130,7 @@ def _decode_v2_rolling(rolling1, rolling2):
         rolling = (rolling * 3) + digit
     if rolling >= 2**28:
         raise ValueError("Rolling code was not in expected range")
-    return int(f"{rolling:028b}"[::-1], 2)
+    return _reverse_int(rolling, 28)
 
 
 def _v2_combine_halves(rolling1, rolling2, fixed1, fixed2, data1, data2):
