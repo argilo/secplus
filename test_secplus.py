@@ -19,12 +19,10 @@
 #
 
 import os
-import platform
 import random
 import unittest
 import secplus
 import struct
-import subprocess
 import sys
 from ctypes import *
 
@@ -136,6 +134,22 @@ class TestSecplus(unittest.TestCase):
         0xf085, 0x728c, 0x728c, 0x728c, 0x728c, 0xa191, 0x8081, 0x8092,
         0x360e281, 0x260f281, 0x360e281, 0x260f281, 0x8193, 0x8193, 0x8193, 0x8193,
     ]
+
+    @classmethod
+    def setUpClass(cls):
+        if os.getenv("TEST_MODE") == "c":
+            print("Testing C implementation.", file=sys.stderr)
+            substitute_c()
+        elif os.getenv("TEST_MODE") == "avr":
+            print("Testing C implementation in AVR simulator.", file=sys.stderr)
+            cls._process = substitute_avr()
+        else:
+            print("Testing Python implementation.", file=sys.stderr)
+
+    @classmethod
+    def tearDownClass(cls):
+        if os.getenv("TEST_MODE") == "avr":
+            shutdown_avr(cls._process)
 
     def test_encode_decode(self):
         for _ in range(self.test_cycles):
@@ -574,6 +588,8 @@ class TestSecplus(unittest.TestCase):
 
 
 def substitute_c():
+    import platform
+
     if platform.system() == "Linux":
         libsecplus = cdll.LoadLibrary("./libsecplus.so")
     elif platform.system() == "Darwin":
@@ -692,6 +708,8 @@ def substitute_c():
 
 
 def substitute_avr():
+    import subprocess
+
     sim = subprocess.Popen(["simulavr", "-d", "attiny85", "-f", "test/avr_test.elf", "-W", "0x20,-", "-R", "0x22,-", "-T", "exit"],
                            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
@@ -815,28 +833,6 @@ def shutdown_avr(sim):
 
 
 if __name__ == '__main__':
-    status = 0
-
-    print("Testing Python:", file=sys.stderr)
-    result = unittest.main(exit=False)
-    if not result.result.wasSuccessful():
-        status = 1
-
-    substitute_c()
-
-    print("Testing C:", file=sys.stderr)
-    result = unittest.main(exit=False)
-    if not result.result.wasSuccessful():
-        status = 1
-
-    process = substitute_avr()
-
-    print("Testing C in AVR simulator:", file=sys.stderr)
-    TestSecplus.test_cycles //= 50
-    result = unittest.main(exit=False)
-    if not result.result.wasSuccessful():
-        status = 1
-
-    shutdown_avr(process)
-
-    exit(status)
+    result = unittest.main()
+    if not result.wasSuccessful():
+        sys.exit(1)

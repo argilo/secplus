@@ -27,4 +27,7 @@ jobs:
       - name: Test
         env:
           TEST_CYCLES: 50000
-        run: ./test_secplus.py
+        run: |
+          ./test_secplus.py
+          TEST_MODE=c ./test_secplus.py
+          TEST_MODE=avr ./test_secplus.py
