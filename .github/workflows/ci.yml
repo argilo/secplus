@@ -13,11 +13,11 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get install -y gcc-avr avr-libc simulavr
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Compile C library
         run: |
           gcc --std=c90 -pedantic -c -Wall -Werror -fpic -o src/secplus.o src/secplus.c
