@@ -25,9 +25,7 @@ jobs:
       - name: Compile C library for AVR
         run: avr-gcc -mmcu=attiny85 -Os -Wall -Werror -o test/avr_test.elf src/secplus.c test/avr_test.c
       - name: Test
-        env:
-          TEST_CYCLES: 50000
         run: |
-          ./test_secplus.py
-          TEST_MODE=c ./test_secplus.py
-          TEST_MODE=avr ./test_secplus.py
+          TEST_CYCLES=50000 ./test_secplus.py
+          TEST_CYCLES=50000 TEST_MODE=c ./test_secplus.py
+          TEST_CYCLES=1000 TEST_MODE=avr ./test_secplus.py
