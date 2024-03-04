@@ -29,3 +29,20 @@ jobs:
           TEST_CYCLES=50000 ./test_secplus.py
           TEST_CYCLES=50000 TEST_MODE=c ./test_secplus.py
           TEST_CYCLES=1000 TEST_MODE=avr ./test_secplus.py
+  micropython:
+    name: "MicroPython"
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Install dependencies
+        run: sudo apt-get install micropython
+      - name: Install MicroPython modules
+        run: |
+          mkdir -p ~/.micropython/lib/
+          curl https://raw.githubusercontent.com/micropython/micropython-lib/v1.22.2/python-stdlib/random/random.py > ~/.micropython/lib/random.py
+          mkdir -p ~/.micropython/lib/unittest/
+          curl https://raw.githubusercontent.com/micropython/micropython-lib/v1.22.2/python-stdlib/unittest/unittest/__init__.py > ~/.micropython/lib/unittest/__init__.py
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Test
+        run: |
+          TEST_CYCLES=50000 micropython ./test_secplus.py
