@@ -1,9 +1,15 @@
 secplus
 =======
 
-This project is a software implementation of the Security+ and Security+ 2.0 rolling code systems used in garage door openers made by Chamberlain, LiftMaster, Craftsman and others. Sample GNU Radio flowgraphs for receiving and transmitting codes are provided. A stand-alone Python module can be used to build other applications.
+This project is a software implementation of the Security+ and Security+ 2.0 rolling code systems used in garage door openers made by Chamberlain, LiftMaster, Craftsman and others.
+
+Encoding and decoding functionality is implemented in a MicroPython-compatible Python module (`secplus.py`) as well as an Arduino-compatible C library (`secplus.c` & `secplus.h`).
+
+Sample GNU Radio flowgraphs for receiving and transmitting codes are also provided.
 
 ## Requirements
+
+The following components are required to run the sample GNU Radio flowgraphs:
 
 * GNU Radio 3.8 or later
 * gr-osmosdr
@@ -49,7 +55,7 @@ The rolling code should be at least 1 higher than the previously transmitted rol
 
 ### secplus.py
 
-This Python module encodes and decodes the rolling and fixed codes, provides utility functions to prepare on-off keying sequences for transmission, and pretty-print the codes. It can be used to build stand-alone applications.
+This Python module encodes and decodes the rolling and fixed codes, provides utility functions to prepare on-off keying sequences for transmission, and pretty-print the codes. It can be used to build stand-alone applications. It uses a limited subset of Python so that it can be executed in MicroPython.
 
 ### secplus.c & secplus.h
 
