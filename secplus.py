@@ -618,39 +618,24 @@ _DOOR_STATUS = {
 }
 
 
-def pretty_wireline(rolling, fixed, data):
-    cmd = ((fixed >> 24) & 0xf00) | (data & 0xff)
-    command_name = _WIRELINE_COMMANDS.get(cmd, "<unknown>")
-
-    nibble = (data >> 8) & 0xf
-    byte1 = (data >> 16) & 0xff
-    byte2 = (data >> 24) & 0xff
+def pretty_wireline(rolling, device_id, command, payload):
+    command_name = _WIRELINE_COMMANDS.get(command, "<unknown>")
 
     msg = ""
-    if cmd == 0x080:
-        msg = f"byte2={byte2}"
-    elif cmd == 0x081:
-        door = _DOOR_STATUS.get(nibble, "<unknown>")
-        learn = (byte2 >> 5) & 1
-        unk1 = (byte2 >> 4) & 1
-        unk2 = (byte2 >> 2) & 1
-        light = (byte2 >> 1) & 1
-        lock = byte2 & 1
-        blocked = (byte1 >> 6) & 1
-        unk3 = (byte1 >> 5) & 1
+    if command == 0x081:
+        door = _DOOR_STATUS.get(payload >> 16, "<unknown>")
+        learn = (payload >> 5) & 1
+        unk1 = (payload >> 4) & 1
+        unk2 = (payload >> 2) & 1
+        light = (payload >> 1) & 1
+        lock = payload & 1
+        blocked = (payload >> 14) & 1
+        unk3 = (payload >> 13) & 1
         msg = f"door={door} learn={learn} light={light} lock={lock} blocked={blocked^1} unk1={unk1} unk2={unk2} unk3={unk3}"
-    elif cmd == 0x0a1:
-        msg = f"byte1={byte1}"
-    elif cmd == 0x181:
-        msg = f"nibble={nibble}"
-    elif cmd == 0x280:
-        msg = "pressed" if byte1 == 1 else "released"
-    elif cmd == 0x391:
-        msg = f"nibble={nibble}"
-    elif cmd == 0x393:
-        msg = f"nibble={nibble}"
-    elif cmd == 0x48c:
-        openings = (byte1 << 8) | byte2
+    elif command == 0x280:
+        msg = "pressed" if ((payload >> 8) & 1) else "released"
+    elif command == 0x48c:
+        openings = payload & 0xffff
         msg = f"number={openings}"
 
-    return f"rolling=0x{rolling:07x} fixed=0x{fixed:010x} data=0x{data:08x} cmd=0x{cmd:03x} {command_name} {msg}".strip()
+    return f"rolling=0x{rolling:07x} device_id=0x{device_id:010x} command=0x{command:03x} payload=0x{payload:05x} {command_name} {msg}".strip()
