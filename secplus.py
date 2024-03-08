@@ -373,6 +373,29 @@ def encode_wireline(rolling, fixed, data):
     return bytes(packet)
 
 
+def encode_wireline_command(rolling, device_id, command, payload):
+    """Encode a Security+ 2.0 wireline payload into 19 bytes
+
+    Arguments:
+    rolling -- the rolling code (28 bits)
+    device_id -- the device ID (40 bits)
+    command -- the command number (12 bits)
+    payload -- the payload value (20 bits)
+
+    Raises a ValueError if the rolling code, fixed code, or data is too large.
+    """
+
+    if command >= 2**12:
+        raise ValueError("Command must be less than 2^12")
+    if payload >= 2**20:
+        raise ValueError("Payload value must be less than 2^20")
+
+    fixed = (device_id & 0xf0ffffffff) | ((command & 0xf00) << 24)
+    data = ((payload & 0xff) << 24) | ((payload & 0xff00) << 8) | ((payload & 0xf0000) >> 8) | (command & 0xff)
+
+    return encode_wireline(rolling, fixed, data)
+
+
 def _decode_wireline_half(code):
     if code[8:10] != [0, 0]:
         raise ValueError("Unexpected values for bits 8 and 9")
@@ -406,6 +429,22 @@ def decode_wireline(code):
     rolling1, fixed1, data1 = _decode_wireline_half(code_bits[:half_len])
     rolling2, fixed2, data2 = _decode_wireline_half(code_bits[half_len:])
     return _v2_combine_halves(rolling1, rolling2, fixed1, fixed2, data1, data2)
+
+
+def decode_wireline_command(code):
+    """Decode a Security+ 2.0 wireline transmission and return the rolling code,
+    device ID, command number, and payload value
+
+    Arguments:
+    code -- a bytes object with the 19 bytes of a serial packet
+
+    Raises a ValueError if the payload bytes are invalid for any reason.
+    """
+    rolling, fixed, data = decode_wireline(code)
+    device_id = fixed & 0xf0ffffffff
+    command = ((fixed >> 24) & 0xf00) | (data & 0xff)
+    payload = ((data << 8) & 0xf0000) | ((data >> 8) & 0xff00) | (data >> 24)
+    return rolling, device_id, command, payload
 
 
 _OOK = {
