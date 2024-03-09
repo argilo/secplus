@@ -439,6 +439,31 @@ int8_t encode_wireline(const uint32_t rolling, const uint64_t fixed,
   return 0;
 }
 
+int8_t encode_wireline_command(uint32_t rolling, uint64_t device_id,
+                               uint16_t command, uint32_t payload,
+                               uint8_t *packet) {
+  uint64_t fixed;
+  uint32_t data;
+
+  if ((device_id >> 40) != 0) {
+    return -1;
+  }
+
+  if ((command >> 12) != 0) {
+    return -1;
+  }
+
+  if ((payload >> 20) != 0) {
+    return -1;
+  }
+
+  fixed = (device_id & 0xf0ffffffff) | ((uint64_t)(command & 0xf00) << 24);
+  data = ((payload & 0xff) << 24) | ((payload & 0xff00) << 8) |
+         ((payload & 0xf0000) >> 8) | (command & 0xff);
+
+  return encode_wireline(rolling, fixed, data, packet);
+}
+
 static int8_t decode_wireline_half(const uint8_t *packet_half,
                                    uint32_t *rolling, uint32_t *fixed,
                                    uint16_t *data) {
@@ -485,6 +510,25 @@ int8_t decode_wireline(const uint8_t *packet, uint32_t *rolling,
   if (err < 0) {
     return err;
   }
+
+  return 0;
+}
+
+int8_t decode_wireline_command(const uint8_t *packet, uint32_t *rolling,
+                               uint64_t *device_id, uint16_t *command,
+                               uint32_t *payload) {
+  int8_t err = 0;
+  uint64_t fixed;
+  uint32_t data;
+
+  err = decode_wireline(packet, rolling, &fixed, &data);
+  if (err < 0) {
+    return err;
+  }
+
+  *device_id = fixed & 0xf0ffffffff;
+  *command = ((fixed >> 24) & 0xf00) | (data & 0xff);
+  *payload = ((data << 8) & 0xf0000) | ((data >> 8) & 0xff00) | (data >> 24);
 
   return 0;
 }

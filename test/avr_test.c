@@ -11,6 +11,13 @@ void get_bytes(uint8_t *in, uint8_t len) {
   }
 }
 
+void get_uint16(uint16_t *in) {
+  for (int8_t i = 0; i < 2; i++) {
+    *in >>= 8;
+    *in |= (uint32_t)special_input_port << 8;
+  }
+}
+
 void get_uint32(uint32_t *in) {
   for (int8_t i = 0; i < 4; i++) {
     *in >>= 8;
@@ -28,6 +35,13 @@ void get_uint64(uint64_t *in) {
 void put_bytes(uint8_t *out, uint8_t len) {
   for (int8_t i = 0; i < len; i++) {
     special_output_port = out[i];
+  }
+}
+
+void put_uint16(uint16_t out) {
+  for (int8_t i = 0; i < 2; i++) {
+    special_output_port = out & 0xff;
+    out >>= 8;
   }
 }
 
@@ -54,6 +68,7 @@ int main() {
   uint32_t rolling;
   uint32_t fixed_v1;
   uint64_t fixed_v2;
+  uint16_t command;
   uint32_t data;
 
   uint8_t buf[40];
@@ -95,13 +110,22 @@ int main() {
       put_bytes(buf, 19);
       break;
     case 5:
+      get_uint32(&rolling);
+      get_uint64(&fixed_v2);
+      get_uint16(&command);
+      get_uint32(&data);
+      err = encode_wireline_command(rolling, fixed_v2, command, data, buf);
+      put_err(err);
+      put_bytes(buf, 19);
+      break;
+    case 6:
       get_bytes(buf, 40);
       err = decode_v1(&buf[0], &buf[20], &rolling, &fixed_v1);
       put_err(err);
       put_uint32(rolling);
       put_uint32(fixed_v1);
       break;
-    case 6:
+    case 7:
       get_bytes(buf, 10);
       err = decode_v2(0, &buf[0], &buf[5], &rolling, &fixed_v2, &data);
       put_err(err);
@@ -109,7 +133,7 @@ int main() {
       put_uint64(fixed_v2);
       put_uint32(data);
       break;
-    case 7:
+    case 8:
       get_bytes(buf, 16);
       err = decode_v2(1, &buf[0], &buf[8], &rolling, &fixed_v2, &data);
       put_err(err);
@@ -117,12 +141,21 @@ int main() {
       put_uint64(fixed_v2);
       put_uint32(data);
       break;
-    case 8:
+    case 9:
       get_bytes(buf, 19);
       err = decode_wireline(buf, &rolling, &fixed_v2, &data);
       put_err(err);
       put_uint32(rolling);
       put_uint64(fixed_v2);
+      put_uint32(data);
+      break;
+    case 10:
+      get_bytes(buf, 19);
+      err = decode_wireline_command(buf, &rolling, &fixed_v2, &command, &data);
+      put_err(err);
+      put_uint32(rolling);
+      put_uint64(fixed_v2);
+      put_uint16(command);
       put_uint32(data);
       break;
     }

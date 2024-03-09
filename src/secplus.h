@@ -35,6 +35,14 @@ extern int8_t encode_wireline(uint32_t rolling, uint64_t fixed, uint32_t data,
 extern int8_t decode_wireline(const uint8_t *packet, uint32_t *rolling,
                               uint64_t *fixed, uint32_t *data);
 
+extern int8_t encode_wireline_command(uint32_t rolling, uint64_t device_id,
+                                      uint16_t command, uint32_t payload,
+                                      uint8_t *packet);
+
+extern int8_t decode_wireline_command(const uint8_t *packet, uint32_t *rolling,
+                                      uint64_t *device_id, uint16_t *command,
+                                      uint32_t *payload);
+
 #ifdef __cplusplus
 }
 #endif

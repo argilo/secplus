@@ -671,7 +671,7 @@ class TestSecplus(unittest.TestCase):
             secplus.encode_wireline_command(rolling, device_id, command, payload)
         self.assertIn(str(cm.exception), ["Device ID must be less than 2^40", "Invalid input"])
 
-    def test_encode_wireline_command_limit(self):
+    def test_encode_wireline_command_command_limit(self):
         rolling = 2**28 - 1
         device_id = 2**40 - 1
         command = 2**12
@@ -679,9 +679,9 @@ class TestSecplus(unittest.TestCase):
 
         with self.assertRaises(ValueError) as cm:
             secplus.encode_wireline_command(rolling, device_id, command, payload)
-        self.assertEqual(str(cm.exception), "Command must be less than 2^12")
+        self.assertIn(str(cm.exception), ["Command must be less than 2^12", "Invalid input"])
 
-    def test_encode_wireline_payload_limit(self):
+    def test_encode_wireline_command_payload_limit(self):
         rolling = 2**28 - 1
         device_id = 2**40 - 1
         command = 2**12 - 1
@@ -689,7 +689,7 @@ class TestSecplus(unittest.TestCase):
 
         with self.assertRaises(ValueError) as cm:
             secplus.encode_wireline_command(rolling, device_id, command, payload)
-        self.assertEqual(str(cm.exception), "Payload value must be less than 2^20")
+        self.assertIn(str(cm.exception), ["Payload value must be less than 2^20", "Invalid input"])
 
     def test_decode_wireline_command_bits_8_9(self):
         for code in self.wireline_codes:
@@ -741,6 +741,8 @@ def substitute_c():
     libsecplus.decode_v2.restype = c_int8
     libsecplus.encode_wireline.restype = c_int8
     libsecplus.decode_wireline.restype = c_int8
+    libsecplus.encode_wireline_command.restype = c_int8
+    libsecplus.decode_wireline_command.restype = c_int8
 
     def encode(rolling, fixed):
         if rolling >= 2**32:
@@ -845,6 +847,33 @@ def substitute_c():
 
     secplus.decode_wireline = decode_wireline
 
+    def encode_wireline_command(rolling, device_id, command, payload):
+        packet = create_string_buffer(os.urandom(19), 19)
+        err = libsecplus.encode_wireline_command(c_uint32(rolling), c_uint64(device_id), c_uint16(command), c_uint32(payload), packet)
+        if err < 0:
+            raise ValueError("Invalid input")
+        return packet.raw
+
+    secplus.encode_wireline_command = encode_wireline_command
+
+    def decode_wireline_command(code):
+        if not isinstance(code, bytes):
+            raise ValueError("Input must be bytes")
+        if len(code) != 19:
+            raise ValueError("Input must be 19 bytes long")
+
+        rolling = c_uint32()
+        device_id = c_uint64()
+        command = c_uint16()
+        payload = c_uint32()
+
+        err = libsecplus.decode_wireline_command(code, byref(rolling), byref(device_id), byref(command), byref(payload))
+        if err < 0:
+            raise ValueError("Invalid input")
+        return rolling.value, device_id.value, command.value, payload.value
+
+    secplus.decode_wireline_command = decode_wireline_command
+
 
 def substitute_avr():
     import subprocess
@@ -869,7 +898,7 @@ def substitute_avr():
     secplus.encode = encode
 
     def decode(code):
-        sim.stdin.write(bytes([5]))
+        sim.stdin.write(bytes([6]))
         sim.stdin.write(bytes(code))
         sim.stdin.flush()
         err, rolling, fixed = struct.unpack("<BLL", sim.stdout.read(9))
@@ -909,7 +938,7 @@ def substitute_avr():
     secplus.encode_v2 = encode_v2
 
     def decode_v2(code):
-        command = 6 if len(code) == 80 else 7
+        command = 7 if len(code) == 80 else 8
 
         code_bytes = []
         for offset in range(0, len(code), 8):
@@ -951,7 +980,7 @@ def substitute_avr():
         if len(code) != 19:
             raise ValueError("Input must be 19 bytes long")
 
-        sim.stdin.write(bytes([8]))
+        sim.stdin.write(bytes([9]))
         sim.stdin.write(code)
         sim.stdin.flush()
         err, rolling, fixed, data = struct.unpack("<BLQL", sim.stdout.read(17))
@@ -961,6 +990,35 @@ def substitute_avr():
         return rolling, fixed, data
 
     secplus.decode_wireline = decode_wireline
+
+    def encode_wireline_command(rolling, device_id, command, payload):
+        sim.stdin.write(struct.pack("<BLQHL", 5, rolling, device_id, command, payload))
+        sim.stdin.flush()
+        err = sim.stdout.read(1)[0]
+        packet = sim.stdout.read(19)
+
+        if err != 0:
+            raise ValueError("Invalid input")
+        return packet
+
+    secplus.encode_wireline_command = encode_wireline_command
+
+    def decode_wireline_command(code):
+        if not isinstance(code, bytes):
+            raise ValueError("Input must be bytes")
+        if len(code) != 19:
+            raise ValueError("Input must be 19 bytes long")
+
+        sim.stdin.write(bytes([10]))
+        sim.stdin.write(code)
+        sim.stdin.flush()
+        err, rolling, device_id, command, payload = struct.unpack("<BLQHL", sim.stdout.read(19))
+
+        if err != 0:
+            raise ValueError("Invalid input")
+        return rolling, device_id, command, payload
+
+    secplus.decode_wireline_command = decode_wireline_command
 
     return sim
 
