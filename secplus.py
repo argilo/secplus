@@ -385,6 +385,8 @@ def encode_wireline_command(rolling, device_id, command, payload):
     Raises a ValueError if the rolling code, fixed code, or data is too large.
     """
 
+    if device_id >= 2**40:
+        raise ValueError("Device ID must be less than 2^40")
     if command >= 2**12:
         raise ValueError("Command must be less than 2^12")
     if payload >= 2**20:
