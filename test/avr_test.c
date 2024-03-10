@@ -78,14 +78,14 @@ int main() {
     case 0:
       cont = 0;
       break;
-    case 1:
+    case 21:
       get_uint32(&rolling);
       get_uint32(&fixed_v1);
       err = encode_v1(rolling, fixed_v1, &buf[0], &buf[20]);
       put_err(err);
       put_bytes(buf, 40);
       break;
-    case 2:
+    case 22:
       get_uint32(&rolling);
       get_uint64(&fixed_v2);
       get_uint32(&data);
@@ -93,7 +93,7 @@ int main() {
       put_err(err);
       put_bytes(buf, 10);
       break;
-    case 3:
+    case 23:
       get_uint32(&rolling);
       get_uint64(&fixed_v2);
       get_uint32(&data);
@@ -101,7 +101,7 @@ int main() {
       put_err(err);
       put_bytes(buf, 16);
       break;
-    case 4:
+    case 24:
       get_uint32(&rolling);
       get_uint64(&fixed_v2);
       get_uint32(&data);
@@ -109,7 +109,7 @@ int main() {
       put_err(err);
       put_bytes(buf, 19);
       break;
-    case 5:
+    case 25:
       get_uint32(&rolling);
       get_uint64(&fixed_v2);
       get_uint16(&command);
@@ -118,14 +118,14 @@ int main() {
       put_err(err);
       put_bytes(buf, 19);
       break;
-    case 6:
+    case 41:
       get_bytes(buf, 40);
       err = decode_v1(&buf[0], &buf[20], &rolling, &fixed_v1);
       put_err(err);
       put_uint32(rolling);
       put_uint32(fixed_v1);
       break;
-    case 7:
+    case 42:
       get_bytes(buf, 10);
       err = decode_v2(0, &buf[0], &buf[5], &rolling, &fixed_v2, &data);
       put_err(err);
@@ -133,7 +133,7 @@ int main() {
       put_uint64(fixed_v2);
       put_uint32(data);
       break;
-    case 8:
+    case 43:
       get_bytes(buf, 16);
       err = decode_v2(1, &buf[0], &buf[8], &rolling, &fixed_v2, &data);
       put_err(err);
@@ -141,7 +141,7 @@ int main() {
       put_uint64(fixed_v2);
       put_uint32(data);
       break;
-    case 9:
+    case 44:
       get_bytes(buf, 19);
       err = decode_wireline(buf, &rolling, &fixed_v2, &data);
       put_err(err);
@@ -149,7 +149,7 @@ int main() {
       put_uint64(fixed_v2);
       put_uint32(data);
       break;
-    case 10:
+    case 45:
       get_bytes(buf, 19);
       err = decode_wireline_command(buf, &rolling, &fixed_v2, &command, &data);
       put_err(err);

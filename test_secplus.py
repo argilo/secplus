@@ -885,7 +885,7 @@ def substitute_avr():
         if rolling >= 2**32:
             raise ValueError("Rolling code must be less than 2^32")
 
-        sim.stdin.write(struct.pack("<BLL", 1, rolling, fixed))
+        sim.stdin.write(struct.pack("<BLL", 21, rolling, fixed))
         sim.stdin.flush()
         err = sim.stdout.read(1)[0]
         symbols = sim.stdout.read(40)
@@ -898,7 +898,7 @@ def substitute_avr():
     secplus.encode = encode
 
     def decode(code):
-        sim.stdin.write(bytes([6]))
+        sim.stdin.write(bytes([41]))
         sim.stdin.write(bytes(code))
         sim.stdin.flush()
         err, rolling, fixed = struct.unpack("<BLL", sim.stdout.read(9))
@@ -911,14 +911,14 @@ def substitute_avr():
     def encode_v2(rolling, fixed, data=None):
         if data is None:
             packet_len = 10
-            command = 2
+            command = 22
             data_c = 0
         else:
             if data >= 2**32:
                 raise ValueError("Data must be less than 2^32")
 
             packet_len = 16
-            command = 3
+            command = 23
             data_c = data
 
         sim.stdin.write(struct.pack("<BLQL", command, rolling, fixed, data_c))
@@ -938,7 +938,7 @@ def substitute_avr():
     secplus.encode_v2 = encode_v2
 
     def decode_v2(code):
-        command = 7 if len(code) == 80 else 8
+        command = 42 if len(code) == 80 else 43
 
         code_bytes = []
         for offset in range(0, len(code), 8):
@@ -963,7 +963,7 @@ def substitute_avr():
         if data >= 2**32:
             raise ValueError("Data must be less than 2^32")
 
-        sim.stdin.write(struct.pack("<BLQL", 4, rolling, fixed, data))
+        sim.stdin.write(struct.pack("<BLQL", 24, rolling, fixed, data))
         sim.stdin.flush()
         err = sim.stdout.read(1)[0]
         packet = sim.stdout.read(19)
@@ -980,7 +980,7 @@ def substitute_avr():
         if len(code) != 19:
             raise ValueError("Input must be 19 bytes long")
 
-        sim.stdin.write(bytes([9]))
+        sim.stdin.write(bytes([44]))
         sim.stdin.write(code)
         sim.stdin.flush()
         err, rolling, fixed, data = struct.unpack("<BLQL", sim.stdout.read(17))
@@ -992,7 +992,7 @@ def substitute_avr():
     secplus.decode_wireline = decode_wireline
 
     def encode_wireline_command(rolling, device_id, command, payload):
-        sim.stdin.write(struct.pack("<BLQHL", 5, rolling, device_id, command, payload))
+        sim.stdin.write(struct.pack("<BLQHL", 25, rolling, device_id, command, payload))
         sim.stdin.flush()
         err = sim.stdout.read(1)[0]
         packet = sim.stdout.read(19)
@@ -1009,7 +1009,7 @@ def substitute_avr():
         if len(code) != 19:
             raise ValueError("Input must be 19 bytes long")
 
-        sim.stdin.write(bytes([10]))
+        sim.stdin.write(bytes([45]))
         sim.stdin.write(code)
         sim.stdin.flush()
         err, rolling, device_id, command, payload = struct.unpack("<BLQHL", sim.stdout.read(19))
