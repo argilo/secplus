@@ -237,7 +237,13 @@ if args.u and args.p:
 mqttc.will_set(TOPIC_AVAILABILITY, "offline", retain=True)
 mqttc.on_connect = on_connect
 mqttc.on_message = on_message
-mqttc.connect(args.H)
+while True:
+    try:
+        mqttc.connect(args.H)
+        break
+    except OSError as e:
+        print(f"Error connecting to MQTT broker. Will retry in 5 seconds. {e}")
+        time.sleep(5)
 mqttc.loop_start()
 
 finished = threading.Event()
