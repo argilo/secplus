@@ -88,3 +88,36 @@ The payload consists of 80 or 128 bits, which are split into two 40- or 64-bit h
 The fixed code is 40 bits long, and the rolling code is 28 bits. The longer 64-bit packets also carry 32 supplemental data bits; PIN pads use these bits to convey the PIN entered by the user. The rolling code is "encrypted" by reversing its binary bits, then converting the resulting number to base 3. Each base-3 digit is converted to 2 binary bits. The fixed code and encrypted rolling code are then interleaved. Finally, the bits are permuted and inverted, with the permutation and inversion pattern depending on the values of particular base-3 digits of the encrypted rolling code.
 
 The rolling code increases by one with each button press, and is sometimes shared across all buttons on a given remote.
+
+## Basic Setup on Raspberry Pi
+
+The following instructions work great for using a HackRF One.  If you patch the `xtrx.c` for a few kernel API changes, you can get xtrx-dkms to build and install, but it's not stricly necessary.  Removing it is simpler.
+
+```bash
+curl -fsSL https://pkgs.tailscale.com/stable/debian/bookworm.noarmor.gpg | sudo tee /usr/share/keyrings/tailscale-archive-keyring.gpg >/dev/null
+curl -fsSL https://pkgs.tailscale.com/stable/debian/bookworm.tailscale-keyring.list | sudo tee /etc/apt/sources.list.d/tailscale.list
+sudo apt-get update
+sudo apt-get install tailscale && sudo tailscale up --ssh
+sudo apt-get install -y vim git python3-pyqt5 gr-osmosdr
+sudo apt purge xtrx-dkms
+sudo apt autoremove
+sudo QT_QPA_PLATFORM="headless" ./secplus_rx.py
+```
+
+To use the (cheap) RTL-SDR Blog v4, you need to install their drivers and make sure they're loaded.  Instructions [here](https://www.rtl-sdr.com/tag/install-guide/), which amount to:
+
+```bash
+sudo apt-get install libusb-1.0-0-dev git cmake pkg-config build-essential
+git clone https://github.com/rtlsdrblog/rtl-sdr-blog
+cd rtl-sdr-blog/
+mkdir build
+cd build
+cmake ../ -DINSTALL_UDEV_RULES=ON
+make
+sudo make install
+sudo cp ../rtl-sdr.rules /etc/udev/rules.d/
+sudo ldconfig
+echo 'blacklist dvb_usb_rtl28xxu' | sudo tee --append /etc/modprobe.d/blacklist-dvb_usb_rtl28xxu.conf
+```
+
+You then need to launch applications with `LD_LIBRARY_PATH=/usr/local/lib:/lib:/usr/lib` so that these libraries are preferred to the system ones installed above, or force that in `/etc/ld.so.conf`.
