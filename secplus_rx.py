@@ -6,7 +6,7 @@
 #
 # GNU Radio Python Flow Graph
 # Title: Secplus Rx
-# GNU Radio version: 3.10.9.2
+# GNU Radio version: 3.10.11.0
 
 from PyQt5 import Qt
 from gnuradio import qtgui
@@ -29,6 +29,7 @@ import time
 import secplus_rx_secplus_decode as secplus_decode  # embedded python block
 import secplus_rx_secplus_v2_decode as secplus_v2_decode  # embedded python block
 import sip
+import threading
 
 
 
@@ -55,7 +56,7 @@ class secplus_rx(gr.top_block, Qt.QWidget):
         self.top_grid_layout = Qt.QGridLayout()
         self.top_layout.addLayout(self.top_grid_layout)
 
-        self.settings = Qt.QSettings("GNU Radio", "secplus_rx")
+        self.settings = Qt.QSettings("gnuradio/flowgraphs", "secplus_rx")
 
         try:
             geometry = self.settings.value("geometry")
@@ -63,6 +64,7 @@ class secplus_rx(gr.top_block, Qt.QWidget):
                 self.restoreGeometry(geometry)
         except BaseException as exc:
             print(f"Qt GUI: Could not restore geometry: {str(exc)}", file=sys.stderr)
+        self.flowgraph_started = threading.Event()
 
         ##################################################
         # Variables
@@ -81,9 +83,9 @@ class secplus_rx(gr.top_block, Qt.QWidget):
         self._threshold_win = qtgui.RangeWidget(self._threshold_range, self.set_threshold, "Detection threshold", "counter_slider", float, QtCore.Qt.Horizontal)
         self.top_layout.addWidget(self._threshold_win)
         # Create the options list
-        self._freq_options = [310150000, 315150000, 390150000]
+        self._freq_options = [310150000, 315150000, 390150000, 433920000]
         # Create the labels list
-        self._freq_labels = ['310 MHz', '315 MHz', '390 MHz']
+        self._freq_labels = ['310 MHz', '315 MHz', '390 MHz', '433 MHz']
         # Create the combo box
         # Create the radio buttons
         self._freq_group_box = Qt.QGroupBox("Frequency" + ": ")
@@ -197,7 +199,7 @@ class secplus_rx(gr.top_block, Qt.QWidget):
 
 
     def closeEvent(self, event):
-        self.settings = Qt.QSettings("GNU Radio", "secplus_rx")
+        self.settings = Qt.QSettings("gnuradio/flowgraphs", "secplus_rx")
         self.settings.setValue("geometry", self.saveGeometry())
         self.stop()
         self.wait()
@@ -261,6 +263,7 @@ def main(top_block_cls=secplus_rx, options=None):
     tb = top_block_cls()
 
     tb.start()
+    tb.flowgraph_started.set()
 
     tb.show()
 

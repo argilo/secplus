@@ -66,14 +66,14 @@ blocks:
     label0: 310 MHz
     label1: 315 MHz
     label2: 390 MHz
-    label3: ''
+    label3: 433 MHz
     label4: ''
     labels: '[]'
-    num_opts: '3'
+    num_opts: '4'
     option0: '310150000'
     option1: '315150000'
     option2: '390150000'
-    option3: '3'
+    option3: '433920000'
     option4: '4'
     options: '[0, 1, 2]'
     orient: Qt.QHBoxLayout
@@ -805,4 +805,4 @@ connections:
 
 metadata:
   file_format: 1
-  grc_version: 3.10.9.2
+  grc_version: 3.10.11.0
