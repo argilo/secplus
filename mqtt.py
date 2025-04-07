@@ -122,7 +122,7 @@ def send_serial(ser, command, payload):
 
 def serial_thread(finished, serial_queue, mqttc):
     PREAMBLE = bytes([0x55, 0x01, 0x00])
-    ser = serial.Serial("/dev/serial0", baudrate=9600, timeout=0.1)
+    ser = serial.Serial("/dev/ttyS0", baudrate=9600, timeout=0.1)
 
     with open("packets.csv", "a") as f:
         writer = csv.writer(f)
